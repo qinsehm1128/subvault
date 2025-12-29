@@ -1,7 +1,4 @@
-FROM golang:1.21-alpine AS builder
-
-# 安装 GCC 和 musl-dev（CGO 编译 SQLite 需要）
-RUN apk add --no-cache gcc musl-dev
+FROM golang:1.21-bookworm AS builder
 
 WORKDIR /app
 
@@ -15,12 +12,14 @@ RUN go mod download
 COPY . .
 
 # 编译
-RUN CGO_ENABLED=1 GOOS=linux go build -a -installsuffix cgo -o subvault .
+RUN CGO_ENABLED=1 go build -o subvault .
 
 # 最终镜像
-FROM alpine:latest
+FROM debian:bookworm-slim
 
-RUN apk --no-cache add ca-certificates sqlite-libs
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
