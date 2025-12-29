@@ -528,7 +528,7 @@ func callOpenAIChatAPI(baseURL, apiKey, model string, messages []openAIMessage) 
 	return openAIResp.Choices[0].Message.Content, nil
 }
 
-// ParseSubscription AI 解析订阅信息（支持文本和图片）
+// ParseSubscription AI 解析订阅信息（支持文本和图片，支持多个订阅）
 func (h *AIHandler) ParseSubscription(c *gin.Context) {
 	vaultID := c.GetString("vaultId")
 
@@ -588,28 +588,31 @@ func (h *AIHandler) ParseSubscription(c *gin.Context) {
 7. category: 分类标签（请根据服务类型智能推荐一个合适的分类，如：娱乐、工具、软件、学习、生活、工作、云服务、音乐、视频、游戏、存储、开发等）
 %s
 
-请严格按照以下 JSON 格式返回（不要包含任何其他文字）:
-{
-  "name": "服务名称",
-  "cost": 金额数字,
-  "currency": "货币代码",
-  "frequencyAmount": 周期数量,
-  "frequencyUnit": "周期单位",
-  "website": "网站地址或空字符串",
-  "category": "分类标签"
-}
+如果内容中包含多个订阅，请返回数组格式。如果只有一个订阅，也返回数组格式。
+请严格按照以下 JSON 数组格式返回（不要包含任何其他文字）:
+[
+  {
+    "name": "服务名称",
+    "cost": 金额数字,
+    "currency": "货币代码",
+    "frequencyAmount": 周期数量,
+    "frequencyUnit": "周期单位",
+    "website": "网站地址或空字符串",
+    "category": "分类标签"
+  }
+]
 
 如果无法识别某些信息，请使用合理的默认值。`, tagsContext)
 
-	var result map[string]interface{}
+	var subscriptions []map[string]interface{}
 
 	if input.ImageData != "" {
 		// 使用视觉模型解析图片
-		result, err = callOpenAIVisionAPI(aiConfig.BaseURL, decryptedKey, aiConfig.Model, prompt, input.ImageData)
+		subscriptions, err = parseSubscriptionsFromAI(aiConfig.BaseURL, decryptedKey, aiConfig.Model, prompt, input.ImageData, true)
 	} else {
 		// 纯文本解析
 		fullPrompt := prompt + "\n\n用户输入内容:\n" + input.Text
-		result, err = callOpenAIParseAPI(aiConfig.BaseURL, decryptedKey, aiConfig.Model, fullPrompt)
+		subscriptions, err = parseSubscriptionsFromAI(aiConfig.BaseURL, decryptedKey, aiConfig.Model, fullPrompt, "", false)
 	}
 
 	if err != nil {
@@ -617,34 +620,113 @@ func (h *AIHandler) ParseSubscription(c *gin.Context) {
 		return
 	}
 
-	// 检查分类标签是否存在，不存在则创建
-	if category, ok := result["category"].(string); ok && category != "" {
-		tagExists := false
-		for _, t := range existingTags {
-			if t.Name == category {
-				tagExists = true
-				break
+	// 处理每个订阅的分类标签
+	var newTags []models.Tag
+	tagColorIndex := len(existingTags)
+	colors := []string{"#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"}
+
+	for i := range subscriptions {
+		if category, ok := subscriptions[i]["category"].(string); ok && category != "" {
+			// 检查标签是否已存在（包括刚创建的）
+			tagExists := false
+			for _, t := range existingTags {
+				if t.Name == category {
+					tagExists = true
+					break
+				}
 			}
-		}
-		if !tagExists {
-			// 自动创建新标签
-			colors := []string{"#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"}
-			newTag := models.Tag{
-				VaultID: vaultID,
-				Name:    category,
-				Color:   colors[len(existingTags)%len(colors)],
+			for _, t := range newTags {
+				if t.Name == category {
+					tagExists = true
+					break
+				}
 			}
-			database.DB.Create(&newTag)
-			result["tagCreated"] = true
-			result["newTag"] = map[string]string{
-				"id":    newTag.ID,
-				"name":  newTag.Name,
-				"color": newTag.Color,
+
+			if !tagExists {
+				// 创建新标签
+				newTag := models.Tag{
+					VaultID: vaultID,
+					Name:    category,
+					Color:   colors[tagColorIndex%len(colors)],
+				}
+				database.DB.Create(&newTag)
+				newTags = append(newTags, newTag)
+				tagColorIndex++
 			}
 		}
 	}
 
+	// 返回结果
+	result := gin.H{
+		"subscriptions": subscriptions,
+		"count":         len(subscriptions),
+	}
+	if len(newTags) > 0 {
+		var newTagsInfo []map[string]string
+		for _, t := range newTags {
+			newTagsInfo = append(newTagsInfo, map[string]string{
+				"id":    t.ID,
+				"name":  t.Name,
+				"color": t.Color,
+			})
+		}
+		result["newTags"] = newTagsInfo
+	}
+
 	c.JSON(http.StatusOK, result)
+}
+
+// parseSubscriptionsFromAI 从 AI 响应解析订阅列表
+func parseSubscriptionsFromAI(baseURL, apiKey, model, prompt, imageData string, isVision bool) ([]map[string]interface{}, error) {
+	var content string
+	var err error
+
+	if isVision && imageData != "" {
+		result, e := callOpenAIVisionAPI(baseURL, apiKey, model, prompt, imageData)
+		if e != nil {
+			return nil, e
+		}
+		// 检查是否有 _allResults
+		if allResults, ok := result["_allResults"].([]map[string]interface{}); ok {
+			return allResults, nil
+		}
+		return []map[string]interface{}{result}, nil
+	}
+
+	// 文本解析
+	messages := []openAIMessage{
+		{Role: "user", Content: prompt},
+	}
+	content, err = callOpenAIChatAPI(baseURL, apiKey, model, messages)
+	if err != nil {
+		return nil, err
+	}
+
+	// 清理 markdown 代码块
+	content = strings.TrimSpace(content)
+	if strings.HasPrefix(content, "```json") {
+		content = strings.TrimPrefix(content, "```json")
+		content = strings.TrimSuffix(content, "```")
+		content = strings.TrimSpace(content)
+	} else if strings.HasPrefix(content, "```") {
+		content = strings.TrimPrefix(content, "```")
+		content = strings.TrimSuffix(content, "```")
+		content = strings.TrimSpace(content)
+	}
+
+	// 尝试解析为数组
+	var arrayResult []map[string]interface{}
+	if err := json.Unmarshal([]byte(content), &arrayResult); err == nil {
+		return arrayResult, nil
+	}
+
+	// 尝试解析为单个对象
+	var singleResult map[string]interface{}
+	if err := json.Unmarshal([]byte(content), &singleResult); err == nil {
+		return []map[string]interface{}{singleResult}, nil
+	}
+
+	return nil, fmt.Errorf("解析订阅信息失败")
 }
 
 // callOpenAIVisionAPI 调用视觉模型 API
@@ -740,7 +822,7 @@ func callOpenAIParseAPI(baseURL, apiKey, model, prompt string) (map[string]inter
 	return parseJSONResponse(content)
 }
 
-// parseJSONResponse 解析 JSON 响应
+// parseJSONResponse 解析 JSON 响应（支持对象或数组）
 func parseJSONResponse(content string) (map[string]interface{}, error) {
 	content = strings.TrimSpace(content)
 	if strings.HasPrefix(content, "```json") {
@@ -753,12 +835,28 @@ func parseJSONResponse(content string) (map[string]interface{}, error) {
 		content = strings.TrimSpace(content)
 	}
 
+	// 尝试解析为对象
 	var result map[string]interface{}
-	if err := json.Unmarshal([]byte(content), &result); err != nil {
-		return nil, fmt.Errorf("解析结果失败: %v, 原始内容: %s", err, content)
+	if err := json.Unmarshal([]byte(content), &result); err == nil {
+		return result, nil
 	}
 
-	return result, nil
+	// 尝试解析为数组（AI 返回多个结果时）
+	var arrayResult []map[string]interface{}
+	if err := json.Unmarshal([]byte(content), &arrayResult); err == nil {
+		if len(arrayResult) > 0 {
+			// 返回第一个结果，并标记还有更多
+			result := arrayResult[0]
+			if len(arrayResult) > 1 {
+				result["_hasMore"] = true
+				result["_allResults"] = arrayResult
+			}
+			return result, nil
+		}
+		return nil, fmt.Errorf("解析结果为空数组")
+	}
+
+	return nil, fmt.Errorf("解析结果失败, 原始内容: %s", content)
 }
 
 func callOpenAIAPI(baseURL, apiKey, model, prompt string) (*models.AnalysisResult, error) {
