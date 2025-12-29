@@ -1,0 +1,15 @@
+# 数据库
+data/
+*.db
+
+# 二进制
+subvault
+*.exe
+
+# IDE
+.idea/
+.vscode/
+
+# 环境变量
+.env
+.env.local

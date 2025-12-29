@@ -1,0 +1,5 @@
+{
+  "name": "SubVault",
+  "description": "A production-grade, client-side encrypted vault for managing network subscriptions and credentials. Features AES-GCM encryption, secure linkage between services and passwords, and AI-powered expense analysis.",
+  "requestFramePermissions": []
+}
