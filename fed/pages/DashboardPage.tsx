@@ -42,6 +42,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [showImportModal, setShowImportModal] = useState(false);
   const [showAISubModal, setShowAISubModal] = useState(false);
   const [aiParsedData, setAiParsedData] = useState<Partial<Subscription> | null>(null);
+  const [pendingAISubscriptions, setPendingAISubscriptions] = useState<Partial<Subscription>[]>([]);
 
   const handleAddSubscription = () => {
     setEditingSubscription(null);
@@ -65,6 +66,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     setShowSubModal(false);
     setEditingSubscription(null);
     setAiParsedData(null);
+    
+    // 如果还有待处理的 AI 订阅，继续处理下一个
+    if (pendingAISubscriptions.length > 0) {
+      const [next, ...rest] = pendingAISubscriptions;
+      setPendingAISubscriptions(rest);
+      setAiParsedData(next);
+      setShowSubModal(true);
+    }
   };
 
   // AI 解析完成后，打开订阅模态框并预填数据
@@ -78,7 +87,30 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       website: data.website || '',
       category: data.category || '',
     };
+    setPendingAISubscriptions([]);
     setAiParsedData(parsedSub);
+    setEditingSubscription(null);
+    setShowSubModal(true);
+  };
+
+  // AI 批量解析完成后，依次处理每个订阅
+  const handleAIBatchParsed = (dataList: any[]) => {
+    if (dataList.length === 0) return;
+    
+    const parsedList = dataList.map(data => ({
+      name: data.name || '',
+      cost: data.cost || 0,
+      currency: data.currency || 'CNY',
+      frequencyAmount: data.frequencyAmount || 1,
+      frequencyUnit: data.frequencyUnit || 'MONTHS',
+      website: data.website || '',
+      category: data.category || '',
+    }));
+    
+    // 第一个立即显示，其余放入待处理队列
+    const [first, ...rest] = parsedList;
+    setPendingAISubscriptions(rest);
+    setAiParsedData(first);
     setEditingSubscription(null);
     setShowSubModal(true);
   };
@@ -232,6 +264,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         isOpen={showAISubModal}
         onClose={() => setShowAISubModal(false)}
         onParsed={handleAIParsed}
+        onBatchParsed={handleAIBatchParsed}
       />
     </div>
   );
