@@ -1,5 +1,8 @@
 FROM golang:1.21-alpine AS builder
 
+# 安装 GCC 和 musl-dev（CGO 编译 SQLite 需要）
+RUN apk add --no-cache gcc musl-dev
+
 WORKDIR /app
 
 # 复制 go.mod 和 go.sum
