@@ -1,12 +1,11 @@
 package handlers
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
 	"net/http"
 	"time"
 
 	"subvault/internal/config"
+	"subvault/internal/crypto"
 	"subvault/internal/database"
 	"subvault/internal/middleware"
 	"subvault/internal/models"
@@ -14,6 +13,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 )
+
+// 固定盐值用于派生 Vault 查找键（不是密码存储，只是用于查找）
+const vaultSalt = "subvault-vault-lookup-salt-v1"
 
 type AuthHandler struct {
 	cfg *config.Config
@@ -42,22 +44,36 @@ func (h *AuthHandler) Unlock(c *gin.Context) {
 		return
 	}
 
-	// 使用 SHA256 哈希主密钥作为 Vault 标识
-	keyHash := hashMasterKey(req.MasterKey)
+	// 使用派生密钥查找 Vault（可重复计算）
+	lookupKey := crypto.DeriveKeyFromPassword(req.MasterKey, vaultSalt)
 
 	var vault models.Vault
 	isNew := false
 
-	if err := database.DB.Where("key_hash = ?", keyHash).First(&vault).Error; err != nil {
+	if err := database.DB.Where("key_hash = ?", lookupKey).First(&vault).Error; err != nil {
 		// Vault 不存在，创建新的
+		// 同时存储 bcrypt 哈希用于验证（可选的额外安全层）
+		bcryptHash, hashErr := crypto.HashPassword(req.MasterKey)
+		if hashErr != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "创建保险库失败"})
+			return
+		}
+
 		vault = models.Vault{
-			KeyHash: keyHash,
+			KeyHash:    lookupKey,
+			KeyBcrypt:  bcryptHash,
 		}
 		if err := database.DB.Create(&vault).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "创建保险库失败"})
 			return
 		}
 		isNew = true
+	} else {
+		// 如果存在 bcrypt 哈希，验证密码
+		if vault.KeyBcrypt != "" && !crypto.CheckPasswordHash(req.MasterKey, vault.KeyBcrypt) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "主密钥错误"})
+			return
+		}
 	}
 
 	// 生成 JWT
@@ -84,17 +100,11 @@ func (h *AuthHandler) generateToken(vaultID string) (string, error) {
 	claims := middleware.Claims{
 		VaultID: vaultID,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)), // 24小时过期
+			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	return token.SignedString([]byte(h.cfg.JWTSecret))
-}
-
-// 使用 SHA256 哈希主密钥
-func hashMasterKey(key string) string {
-	hash := sha256.Sum256([]byte(key))
-	return hex.EncodeToString(hash[:])
 }

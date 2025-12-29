@@ -10,6 +10,9 @@ services:
       - "18080:8080"
     environment:
       - PORT=8080
+      - ENV=production
+      - JWT_SECRET=${JWT_SECRET}
+      - ENCRYPTION_KEY=${ENCRYPTION_KEY}
     volumes:
       - ./back/data:/app/data
     networks:

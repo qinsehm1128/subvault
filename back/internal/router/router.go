@@ -25,6 +25,9 @@ func Setup(cfg *config.Config) *gin.Engine {
 		AllowCredentials: true,
 	}))
 
+	// 全局速率限制
+	r.Use(middleware.RateLimitMiddleware())
+
 	// 健康检查
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{"status": "ok", "service": "subvault-api"})
@@ -33,9 +36,9 @@ func Setup(cfg *config.Config) *gin.Engine {
 	// API v1
 	v1 := r.Group("/api/v1")
 	{
-		// 解锁（无需认证）
+		// 解锁（无需认证，但有更严格的速率限制）
 		authHandler := handlers.NewAuthHandler(cfg)
-		v1.POST("/unlock", authHandler.Unlock)
+		v1.POST("/unlock", middleware.AuthRateLimitMiddleware(), authHandler.Unlock)
 
 		// 需要认证的路由
 		protected := v1.Group("")
@@ -45,7 +48,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 			protected.GET("/verify", authHandler.VerifyToken)
 
 			// Vault 数据
-			vaultHandler := handlers.NewVaultHandler()
+			vaultHandler := handlers.NewVaultHandler(cfg)
 			protected.GET("/vault", vaultHandler.GetVault)
 
 			// 订阅
@@ -67,7 +70,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 			}
 
 			// AI 分析
-			aiHandler := handlers.NewAIHandler()
+			aiHandler := handlers.NewAIHandler(cfg)
 			ai := protected.Group("/ai")
 			{
 				ai.GET("/config", aiHandler.GetAIConfig)

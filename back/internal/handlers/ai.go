@@ -9,24 +9,28 @@ import (
 	"net/http"
 	"strings"
 
+	"subvault/internal/config"
+	"subvault/internal/crypto"
 	"subvault/internal/database"
 	"subvault/internal/models"
 
 	"github.com/gin-gonic/gin"
 )
 
-type AIHandler struct{}
+type AIHandler struct {
+	cfg *config.Config
+}
 
-func NewAIHandler() *AIHandler {
-	return &AIHandler{}
+func NewAIHandler(cfg *config.Config) *AIHandler {
+	return &AIHandler{cfg: cfg}
 }
 
 // GetAIConfig 获取 AI 配置
 func (h *AIHandler) GetAIConfig(c *gin.Context) {
 	vaultID := c.GetString("vaultId")
 
-	var config models.AIConfig
-	result := database.DB.Where("vault_id = ?", vaultID).First(&config)
+	var aiConfig models.AIConfig
+	result := database.DB.Where("vault_id = ?", vaultID).First(&aiConfig)
 
 	if result.Error != nil {
 		c.JSON(http.StatusOK, models.AIConfig{
@@ -38,12 +42,24 @@ func (h *AIHandler) GetAIConfig(c *gin.Context) {
 		return
 	}
 
-	// 隐藏部分 API Key
-	if len(config.APIKey) > 8 {
-		config.APIKey = config.APIKey[:4] + "****" + config.APIKey[len(config.APIKey)-4:]
+	// 解密 API Key 后隐藏部分显示
+	decryptedKey := ""
+	if aiConfig.APIKey != "" {
+		decrypted, err := crypto.Decrypt(aiConfig.APIKey, h.cfg.EncryptionKey)
+		if err == nil && len(decrypted) > 8 {
+			decryptedKey = decrypted[:4] + "****" + decrypted[len(decrypted)-4:]
+		} else if err == nil {
+			decryptedKey = "****"
+		}
 	}
 
-	c.JSON(http.StatusOK, config)
+	c.JSON(http.StatusOK, gin.H{
+		"id":      aiConfig.ID,
+		"vaultId": aiConfig.VaultID,
+		"baseUrl": aiConfig.BaseURL,
+		"apiKey":  decryptedKey,
+		"model":   aiConfig.Model,
+	})
 }
 
 // SaveAIConfig 保存 AI 配置
@@ -61,17 +77,28 @@ func (h *AIHandler) SaveAIConfig(c *gin.Context) {
 		return
 	}
 
-	var config models.AIConfig
-	result := database.DB.Where("vault_id = ?", vaultID).First(&config)
+	var aiConfig models.AIConfig
+	result := database.DB.Where("vault_id = ?", vaultID).First(&aiConfig)
+
+	// 加密 API Key
+	encryptedKey := ""
+	if !strings.Contains(input.APIKey, "****") && input.APIKey != "" {
+		encrypted, err := crypto.Encrypt(input.APIKey, h.cfg.EncryptionKey)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "加密失败"})
+			return
+		}
+		encryptedKey = encrypted
+	}
 
 	if result.Error != nil {
-		config = models.AIConfig{
+		aiConfig = models.AIConfig{
 			VaultID: vaultID,
 			BaseURL: input.BaseURL,
-			APIKey:  input.APIKey,
+			APIKey:  encryptedKey,
 			Model:   input.Model,
 		}
-		if err := database.DB.Create(&config).Error; err != nil {
+		if err := database.DB.Create(&aiConfig).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "保存配置失败"})
 			return
 		}
@@ -80,13 +107,21 @@ func (h *AIHandler) SaveAIConfig(c *gin.Context) {
 			"base_url": input.BaseURL,
 			"model":    input.Model,
 		}
-		if !strings.Contains(input.APIKey, "****") && input.APIKey != "" {
-			updates["api_key"] = input.APIKey
+		if encryptedKey != "" {
+			updates["api_key"] = encryptedKey
 		}
-		database.DB.Model(&config).Updates(updates)
+		database.DB.Model(&aiConfig).Updates(updates)
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "配置已保存"})
+}
+
+// getDecryptedAPIKey 获取解密后的 API Key
+func (h *AIHandler) getDecryptedAPIKey(aiConfig models.AIConfig) (string, error) {
+	if aiConfig.APIKey == "" {
+		return "", fmt.Errorf("API Key 未配置")
+	}
+	return crypto.Decrypt(aiConfig.APIKey, h.cfg.EncryptionKey)
 }
 
 // GetChatHistory 获取对话历史
@@ -124,14 +159,21 @@ func (h *AIHandler) Chat(c *gin.Context) {
 	}
 
 	// 获取 AI 配置
-	var config models.AIConfig
-	if err := database.DB.Where("vault_id = ?", vaultID).First(&config).Error; err != nil {
+	var aiConfig models.AIConfig
+	if err := database.DB.Where("vault_id = ?", vaultID).First(&aiConfig).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请先配置 AI 服务"})
 		return
 	}
 
-	if config.BaseURL == "" || config.APIKey == "" || config.Model == "" {
+	if aiConfig.BaseURL == "" || aiConfig.APIKey == "" || aiConfig.Model == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "AI 配置不完整"})
+		return
+	}
+
+	// 解密 API Key
+	decryptedKey, err := h.getDecryptedAPIKey(aiConfig)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "解密 API Key 失败"})
 		return
 	}
 
@@ -164,18 +206,18 @@ func (h *AIHandler) Chat(c *gin.Context) {
 	messages := []openAIMessage{
 		{Role: "system", Content: "你是一个专业的个人财务顾问助手，帮助用户管理和优化他们的订阅支出。请用简体中文回复，保持友好和专业。支持使用 Markdown 格式回复。" + subsContext},
 	}
-	for _, h := range history {
-		messages = append(messages, openAIMessage{Role: h.Role, Content: h.Content})
+	for _, chatHistory := range history {
+		messages = append(messages, openAIMessage{Role: chatHistory.Role, Content: chatHistory.Content})
 	}
 
 	// 流式输出
 	if input.Stream {
-		h.streamChat(c, config, messages, vaultID)
+		h.streamChat(c, aiConfig.BaseURL, decryptedKey, aiConfig.Model, messages, vaultID)
 		return
 	}
 
 	// 非流式调用
-	reply, err := callOpenAIChatAPI(config.BaseURL, config.APIKey, config.Model, messages)
+	reply, err := callOpenAIChatAPI(aiConfig.BaseURL, decryptedKey, aiConfig.Model, messages)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -196,8 +238,8 @@ func (h *AIHandler) Chat(c *gin.Context) {
 }
 
 // streamChat 流式对话
-func (h *AIHandler) streamChat(c *gin.Context, config models.AIConfig, messages []openAIMessage, vaultID string) {
-	baseURL := strings.TrimSuffix(config.BaseURL, "/")
+func (h *AIHandler) streamChat(c *gin.Context, baseURL, apiKey, model string, messages []openAIMessage, vaultID string) {
+	baseURL = strings.TrimSuffix(baseURL, "/")
 	if !strings.HasSuffix(baseURL, "/v1") && !strings.HasSuffix(baseURL, "/chat/completions") {
 		if !strings.Contains(baseURL, "/v1") {
 			baseURL += "/v1"
@@ -208,7 +250,7 @@ func (h *AIHandler) streamChat(c *gin.Context, config models.AIConfig, messages 
 	}
 
 	reqBody := map[string]interface{}{
-		"model":    config.Model,
+		"model":    model,
 		"messages": messages,
 		"stream":   true,
 	}
@@ -226,7 +268,7 @@ func (h *AIHandler) streamChat(c *gin.Context, config models.AIConfig, messages 
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+config.APIKey)
+	req.Header.Set("Authorization", "Bearer "+apiKey)
 	req.Header.Set("Accept", "text/event-stream")
 
 	client := &http.Client{}
@@ -333,14 +375,21 @@ func (h *AIHandler) GetReports(c *gin.Context) {
 func (h *AIHandler) Analyze(c *gin.Context) {
 	vaultID := c.GetString("vaultId")
 
-	var config models.AIConfig
-	if err := database.DB.Where("vault_id = ?", vaultID).First(&config).Error; err != nil {
+	var aiConfig models.AIConfig
+	if err := database.DB.Where("vault_id = ?", vaultID).First(&aiConfig).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请先配置 AI 服务"})
 		return
 	}
 
-	if config.BaseURL == "" || config.APIKey == "" || config.Model == "" {
+	if aiConfig.BaseURL == "" || aiConfig.APIKey == "" || aiConfig.Model == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "AI 配置不完整"})
+		return
+	}
+
+	// 解密 API Key
+	decryptedKey, err := h.getDecryptedAPIKey(aiConfig)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "解密 API Key 失败"})
 		return
 	}
 
@@ -377,7 +426,7 @@ func (h *AIHandler) Analyze(c *gin.Context) {
   "insights": ["建议1", "建议2", "建议3"]
 }`, strings.Join(subsList, "\n"))
 
-	result, err := callOpenAIAPI(config.BaseURL, config.APIKey, config.Model, prompt)
+	result, err := callOpenAIAPI(aiConfig.BaseURL, decryptedKey, aiConfig.Model, prompt)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
@@ -483,14 +532,21 @@ func callOpenAIChatAPI(baseURL, apiKey, model string, messages []openAIMessage) 
 func (h *AIHandler) ParseSubscription(c *gin.Context) {
 	vaultID := c.GetString("vaultId")
 
-	var config models.AIConfig
-	if err := database.DB.Where("vault_id = ?", vaultID).First(&config).Error; err != nil {
+	var aiConfig models.AIConfig
+	if err := database.DB.Where("vault_id = ?", vaultID).First(&aiConfig).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "请先配置 AI 服务"})
 		return
 	}
 
-	if config.BaseURL == "" || config.APIKey == "" || config.Model == "" {
+	if aiConfig.BaseURL == "" || aiConfig.APIKey == "" || aiConfig.Model == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "AI 配置不完整"})
+		return
+	}
+
+	// 解密 API Key
+	decryptedKey, err := h.getDecryptedAPIKey(aiConfig)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "解密 API Key 失败"})
 		return
 	}
 
@@ -546,15 +602,14 @@ func (h *AIHandler) ParseSubscription(c *gin.Context) {
 如果无法识别某些信息，请使用合理的默认值。`, tagsContext)
 
 	var result map[string]interface{}
-	var err error
 
 	if input.ImageData != "" {
 		// 使用视觉模型解析图片
-		result, err = callOpenAIVisionAPI(config.BaseURL, config.APIKey, config.Model, prompt, input.ImageData)
+		result, err = callOpenAIVisionAPI(aiConfig.BaseURL, decryptedKey, aiConfig.Model, prompt, input.ImageData)
 	} else {
 		// 纯文本解析
 		fullPrompt := prompt + "\n\n用户输入内容:\n" + input.Text
-		result, err = callOpenAIParseAPI(config.BaseURL, config.APIKey, config.Model, fullPrompt)
+		result, err = callOpenAIParseAPI(aiConfig.BaseURL, decryptedKey, aiConfig.Model, fullPrompt)
 	}
 
 	if err != nil {

@@ -10,7 +10,8 @@ import (
 // Vault 保险库（通过主密钥哈希标识）
 type Vault struct {
 	ID        string    `json:"id" gorm:"primaryKey"`
-	KeyHash   string    `json:"-" gorm:"uniqueIndex;not null"` // 主密钥的 SHA256 哈希
+	KeyHash   string    `json:"-" gorm:"uniqueIndex;not null"` // 派生密钥用于查找
+	KeyBcrypt string    `json:"-" gorm:""`                     // bcrypt 哈希用于验证
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -21,13 +22,14 @@ func (v *Vault) BeforeCreate(tx *gorm.DB) error {
 }
 
 // Credential 凭证
+// Password 字段存储加密后的密文
 type Credential struct {
 	ID        string    `json:"id" gorm:"primaryKey"`
 	VaultID   string    `json:"vaultId" gorm:"index;not null"`
 	Username  string    `json:"username" gorm:"not null"`
-	Password  string    `json:"password,omitempty"`
+	Password  string    `json:"password,omitempty"` // 存储 AES-256-GCM 加密后的密文
 	Label     string    `json:"label" gorm:"not null"`
-	Notes     string    `json:"notes,omitempty"`
+	Notes     string    `json:"notes,omitempty"` // 存储 AES-256-GCM 加密后的密文
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -107,11 +109,12 @@ type VaultData struct {
 }
 
 // AIConfig AI 配置（每个 Vault 独立配置）
+// APIKey 字段存储加密后的密文
 type AIConfig struct {
 	ID        string    `json:"id" gorm:"primaryKey"`
 	VaultID   string    `json:"vaultId" gorm:"uniqueIndex;not null"`
 	BaseURL   string    `json:"baseUrl"`   // OpenAI 兼容 API 地址
-	APIKey    string    `json:"apiKey"`    // API Key
+	APIKey    string    `json:"apiKey"`    // 存储 AES-256-GCM 加密后的密文
 	Model     string    `json:"model"`     // 模型名称
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
