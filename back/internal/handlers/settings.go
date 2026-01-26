@@ -260,6 +260,11 @@ func (h *SettingsHandler) GetAnalytics(c *gin.Context) {
 	currencyCounts := make(map[string]int)
 	var totalMonthly float64
 
+	// 初始化为空数组，避免返回 null
+	categoryBreakdown := make([]CategorySpend, 0)
+	currencyBreakdown := make([]CurrencySpend, 0)
+	monthlySpending := make([]MonthlySpend, 0)
+
 	for _, sub := range subscriptions {
 		monthly := calculateMonthlyAmount(sub.Cost, sub.FrequencyAmount, sub.FrequencyUnit)
 		totalMonthly += monthly
@@ -272,7 +277,6 @@ func (h *SettingsHandler) GetAnalytics(c *gin.Context) {
 	}
 
 	// 分类占比
-	var categoryBreakdown []CategorySpend
 	for cat, amount := range categoryMap {
 		percentage := 0.0
 		if totalMonthly > 0 {
@@ -290,7 +294,6 @@ func (h *SettingsHandler) GetAnalytics(c *gin.Context) {
 	})
 
 	// 货币分布
-	var currencyBreakdown []CurrencySpend
 	for curr, amount := range currencyMap {
 		currencyBreakdown = append(currencyBreakdown, CurrencySpend{
 			Currency: curr,
@@ -300,7 +303,6 @@ func (h *SettingsHandler) GetAnalytics(c *gin.Context) {
 	}
 
 	// 模拟过去6个月的支出趋势
-	var monthlySpending []MonthlySpend
 	now := time.Now()
 	for i := 5; i >= 0; i-- {
 		month := now.AddDate(0, -i, 0)
