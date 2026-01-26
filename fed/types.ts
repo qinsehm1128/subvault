@@ -24,9 +24,24 @@ export interface Subscription {
   active: boolean;
 }
 
+export interface Memo {
+  id: string;
+  title: string;
+  content: string;
+  category: string;
+  isPinned: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export type MemoCategory = '个人信息' | '银行卡' | '地址' | '其他';
+
+export const MEMO_CATEGORIES: MemoCategory[] = ['个人信息', '银行卡', '地址', '其他'];
+
 export interface VaultData {
   credentials: Credential[];
   subscriptions: Subscription[];
+  memos: Memo[];
   lastUpdated: number;
 }
 

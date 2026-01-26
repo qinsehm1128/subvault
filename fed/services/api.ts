@@ -1,3 +1,5 @@
+import { Memo } from '../types';
+
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
 class ApiService {
@@ -125,6 +127,31 @@ class ApiService {
 
   async deleteCredential(id: string) {
     return this.request<void>(`/credentials/${id}`, {
+      method: 'DELETE',
+    });
+  }
+
+  // === 备忘录 ===
+  async getMemos(): Promise<Memo[]> {
+    return this.request<Memo[]>('/memos');
+  }
+
+  async createMemo(data: Partial<Memo>): Promise<Memo> {
+    return this.request<Memo>('/memos', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateMemo(id: string, data: Partial<Memo>): Promise<Memo> {
+    return this.request<Memo>(`/memos/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteMemo(id: string): Promise<void> {
+    return this.request<void>(`/memos/${id}`, {
       method: 'DELETE',
     });
   }

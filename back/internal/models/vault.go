@@ -11,6 +11,7 @@ import (
 type Vault struct {
 	ID        string    `json:"id" gorm:"primaryKey"`
 	KeyHash   string    `json:"-" gorm:"uniqueIndex;not null"`
+	KeyBcrypt string    `json:"-"` // bcrypt hash for password verification
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }

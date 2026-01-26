@@ -11,6 +11,7 @@ import { AIPage } from './AIPage';
 import { AnalyticsPage } from './AnalyticsPage';
 import { SettingsPage } from './SettingsPage';
 import { PlusIcon, CreditCardIcon, KeyIcon, UploadIcon, BrainIcon } from '../components/Icons';
+import { MemoPage } from './MemoPage';
 
 interface DashboardPageProps {
   vaultData: VaultData;
@@ -124,6 +125,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         return <AnalyticsPage />;
       case 'settings':
         return <SettingsPage />;
+      case 'memos':
+        return <MemoPage />;
       default:
         return (
           <main className="flex-1 overflow-y-auto px-8 py-8">
@@ -233,6 +236,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         onTabChange={setActiveTab}
         subscriptionCount={vaultData.subscriptions.length}
         credentialCount={vaultData.credentials.length}
+        memoCount={vaultData.memos?.length || 0}
         onExport={onExport}
         onLock={onLock}
       />

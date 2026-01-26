@@ -69,6 +69,16 @@ func Setup(cfg *config.Config) *gin.Engine {
 				creds.DELETE("/:id", vaultHandler.DeleteCredential)
 			}
 
+			// 备忘录
+			memoHandler := handlers.NewMemoHandler(cfg)
+			memos := protected.Group("/memos")
+			{
+				memos.GET("", memoHandler.GetMemos)
+				memos.POST("", memoHandler.CreateMemo)
+				memos.PUT("/:id", memoHandler.UpdateMemo)
+				memos.DELETE("/:id", memoHandler.DeleteMemo)
+			}
+
 			// AI 分析
 			aiHandler := handlers.NewAIHandler(cfg)
 			ai := protected.Group("/ai")

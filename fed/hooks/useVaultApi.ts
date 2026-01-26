@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { api } from '../services/api';
-import { VaultData, Subscription, Credential } from '../types';
+import { VaultData, Subscription, Credential, Memo } from '../types';
 import { calculateNextRenewal } from '../utils/subscription';
 
 export const useVaultApi = () => {
@@ -16,6 +16,7 @@ export const useVaultApi = () => {
       setVaultData({
         credentials: data.credentials || [],
         subscriptions: data.subscriptions || [],
+        memos: data.memos || [],
         lastUpdated: data.lastUpdated || Date.now(),
       });
     } catch (err: any) {

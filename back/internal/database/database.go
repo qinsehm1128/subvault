@@ -37,6 +37,7 @@ func Init(dbPath string) error {
 		&models.AIConfig{},
 		&models.AIChat{},
 		&models.AIReport{},
+		&models.Memo{},
 	)
 }
 

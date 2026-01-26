@@ -1,5 +1,5 @@
 import React from 'react';
-import { UnlockIcon, CreditCardIcon, KeyIcon, BrainIcon, ChartIcon, SettingsIcon, DownloadIcon, LockIcon } from './Icons';
+import { UnlockIcon, CreditCardIcon, KeyIcon, BrainIcon, ChartIcon, SettingsIcon, DownloadIcon, LockIcon, MemoIcon } from './Icons';
 
 interface SidebarItemProps {
   active: boolean;
@@ -26,13 +26,14 @@ const SidebarItem: React.FC<SidebarItemProps> = ({ active, onClick, icon, label,
   </button>
 );
 
-export type TabType = 'subscriptions' | 'credentials' | 'analytics' | 'settings' | 'ai';
+export type TabType = 'subscriptions' | 'credentials' | 'memos' | 'analytics' | 'settings' | 'ai';
 
 interface SidebarProps {
   activeTab: TabType;
   onTabChange: (tab: TabType) => void;
   subscriptionCount?: number;
   credentialCount?: number;
+  memoCount?: number;
   onExport: () => void;
   onLock: () => void;
 }
@@ -42,6 +43,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onTabChange,
   subscriptionCount,
   credentialCount,
+  memoCount,
   onExport,
   onLock
 }) => {
@@ -68,6 +70,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
           icon={<KeyIcon className="w-4 h-4" />} 
           label="凭证管理" 
           count={credentialCount} 
+        />
+        <SidebarItem 
+          active={activeTab === 'memos'} 
+          onClick={() => onTabChange('memos')} 
+          icon={<MemoIcon className="w-4 h-4" />} 
+          label="备忘录" 
+          count={memoCount} 
         />
         
         <div className="pt-4 pb-2">
