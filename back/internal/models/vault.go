@@ -7,11 +7,10 @@ import (
 	"gorm.io/gorm"
 )
 
-// Vault 保险库（通过主密钥哈希标识）
+// Vault 保险库
 type Vault struct {
 	ID        string    `json:"id" gorm:"primaryKey"`
-	KeyHash   string    `json:"-" gorm:"uniqueIndex;not null"` // 派生密钥用于查找
-	KeyBcrypt string    `json:"-" gorm:""`                     // bcrypt 哈希用于验证
+	KeyHash   string    `json:"-" gorm:"uniqueIndex;not null"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
@@ -53,12 +52,12 @@ type Subscription struct {
 	RenewalDate     string    `json:"renewalDate"`
 	StartDate       string    `json:"startDate"`
 	Category        string    `json:"category" gorm:"default:生活"`
-	TagIDs          string    `json:"tagIds,omitempty"` // 逗号分隔的标签ID
 	CredentialID    *string   `json:"credentialId,omitempty"`
 	Website         string    `json:"website,omitempty"`
 	Active          bool      `json:"active" gorm:"default:true"`
 	CreatedAt       time.Time `json:"createdAt"`
 	UpdatedAt       time.Time `json:"updatedAt"`
+	Tags            []Tag     `json:"tags,omitempty" gorm:"many2many:subscription_tags;"`
 }
 
 func (s *Subscription) BeforeCreate(tx *gorm.DB) error {
@@ -113,9 +112,9 @@ type VaultData struct {
 type AIConfig struct {
 	ID        string    `json:"id" gorm:"primaryKey"`
 	VaultID   string    `json:"vaultId" gorm:"uniqueIndex;not null"`
-	BaseURL   string    `json:"baseUrl"`   // OpenAI 兼容 API 地址
-	APIKey    string    `json:"apiKey"`    // 存储 AES-256-GCM 加密后的密文
-	Model     string    `json:"model"`     // 模型名称
+	BaseURL   string    `json:"baseUrl"` // OpenAI 兼容 API 地址
+	APIKey    string    `json:"apiKey"`  // 存储 AES-256-GCM 加密后的密文
+	Model     string    `json:"model"`   // 模型名称
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }

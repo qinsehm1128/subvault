@@ -30,20 +30,9 @@ func (h *VaultHandler) GetVault(c *gin.Context) {
 	database.DB.Where("vault_id = ?", vaultID).Find(&credentials)
 	database.DB.Where("vault_id = ?", vaultID).Find(&subscriptions)
 
-	// 解密凭证敏感字段
 	for i := range credentials {
-		if credentials[i].Password != "" {
-			decrypted, err := crypto.Decrypt(credentials[i].Password, h.cfg.EncryptionKey)
-			if err == nil {
-				credentials[i].Password = decrypted
-			}
-		}
-		if credentials[i].Notes != "" {
-			decrypted, err := crypto.Decrypt(credentials[i].Notes, h.cfg.EncryptionKey)
-			if err == nil {
-				credentials[i].Notes = decrypted
-			}
-		}
+		credentials[i].Password, _ = crypto.DecryptField(credentials[i].Password, h.cfg.EncryptionKey)
+		credentials[i].Notes, _ = crypto.DecryptField(credentials[i].Notes, h.cfg.EncryptionKey)
 	}
 
 	if credentials == nil {
@@ -148,20 +137,9 @@ func (h *VaultHandler) GetCredentials(c *gin.Context) {
 	var credentials []models.Credential
 	database.DB.Where("vault_id = ?", vaultID).Find(&credentials)
 
-	// 解密敏感字段
 	for i := range credentials {
-		if credentials[i].Password != "" {
-			decrypted, err := crypto.Decrypt(credentials[i].Password, h.cfg.EncryptionKey)
-			if err == nil {
-				credentials[i].Password = decrypted
-			}
-		}
-		if credentials[i].Notes != "" {
-			decrypted, err := crypto.Decrypt(credentials[i].Notes, h.cfg.EncryptionKey)
-			if err == nil {
-				credentials[i].Notes = decrypted
-			}
-		}
+		credentials[i].Password, _ = crypto.DecryptField(credentials[i].Password, h.cfg.EncryptionKey)
+		credentials[i].Notes, _ = crypto.DecryptField(credentials[i].Notes, h.cfg.EncryptionKey)
 	}
 
 	if credentials == nil {
@@ -182,22 +160,21 @@ func (h *VaultHandler) CreateCredential(c *gin.Context) {
 
 	cred.VaultID = vaultID
 
-	// 加密敏感字段
 	if cred.Password != "" {
-		encrypted, err := crypto.Encrypt(cred.Password, h.cfg.EncryptionKey)
+		var err error
+		cred.Password, err = crypto.EncryptField(cred.Password, h.cfg.EncryptionKey)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "加密失败"})
 			return
 		}
-		cred.Password = encrypted
 	}
 	if cred.Notes != "" {
-		encrypted, err := crypto.Encrypt(cred.Notes, h.cfg.EncryptionKey)
+		var err error
+		cred.Notes, err = crypto.EncryptField(cred.Notes, h.cfg.EncryptionKey)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "加密失败"})
 			return
 		}
-		cred.Notes = encrypted
 	}
 
 	if err := database.DB.Create(&cred).Error; err != nil {
@@ -234,32 +211,30 @@ func (h *VaultHandler) UpdateCredential(c *gin.Context) {
 		return
 	}
 
-	// 加密敏感字段
-	encryptedPassword := ""
-	encryptedNotes := ""
-	if updateData.Password != "" {
-		encrypted, err := crypto.Encrypt(updateData.Password, h.cfg.EncryptionKey)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "加密失败"})
-			return
-		}
-		encryptedPassword = encrypted
-	}
-	if updateData.Notes != "" {
-		encrypted, err := crypto.Encrypt(updateData.Notes, h.cfg.EncryptionKey)
-		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "加密失败"})
-			return
-		}
-		encryptedNotes = encrypted
+	updates := map[string]interface{}{
+		"username": updateData.Username,
+		"label":    updateData.Label,
 	}
 
-	database.DB.Model(&cred).Updates(map[string]interface{}{
-		"username": updateData.Username,
-		"password": encryptedPassword,
-		"label":    updateData.Label,
-		"notes":    encryptedNotes,
-	})
+	if updateData.Password != "" {
+		encrypted, err := crypto.EncryptField(updateData.Password, h.cfg.EncryptionKey)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "加密失败"})
+			return
+		}
+		updates["password"] = encrypted
+	}
+
+	if updateData.Notes != "" {
+		encrypted, err := crypto.EncryptField(updateData.Notes, h.cfg.EncryptionKey)
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "加密失败"})
+			return
+		}
+		updates["notes"] = encrypted
+	}
+
+	database.DB.Model(&cred).Updates(updates)
 
 	// 返回解密后的数据
 	cred.Username = updateData.Username
