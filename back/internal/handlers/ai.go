@@ -888,3 +888,112 @@ func callOpenAIAPI(baseURL, apiKey, model, prompt string) (*models.AnalysisResul
 
 	return &result, nil
 }
+
+// ParseCredentials AI 解析凭据信息（支持文本和文件内容，支持多个凭据）
+func (h *AIHandler) ParseCredentials(c *gin.Context) {
+	vaultID := c.GetString("vaultId")
+
+	var aiConfig models.AIConfig
+	if err := database.DB.Where("vault_id = ?", vaultID).First(&aiConfig).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请先配置 AI 服务"})
+		return
+	}
+
+	if aiConfig.BaseURL == "" || aiConfig.APIKey == "" || aiConfig.Model == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "AI 配置不完整"})
+		return
+	}
+
+	// 解密 API Key
+	decryptedKey, err := h.getDecryptedAPIKey(aiConfig)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "解密 API Key 失败"})
+		return
+	}
+
+	var input struct {
+		Text     string `json:"text"`     // 文本内容（可以是文件提取的文本或用户输入）
+		FileName string `json:"fileName"` // 原始文件名（用于上下文）
+		FileType string `json:"fileType"` // 文件类型
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的请求数据"})
+		return
+	}
+
+	if input.Text == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请提供文本内容"})
+		return
+	}
+
+	// 构建 AI 解析提示
+	prompt := fmt.Sprintf(`请从以下内容中提取账号凭据信息。请务必使用**简体中文**回复，并严格按照 JSON 格式返回。
+
+需要提取的信息：
+1. label: 服务/网站名称（必填，如"GitHub"、"淘宝"等）
+2. username: 用户名/账号/邮箱（必填）
+3. password: 密码（如果有）
+4. website: 网站地址（如果有，格式如 https://xxx.com）
+5. category: 分类（请智能推荐，如：社交、购物、工作、娱乐、开发、金融、教育、其他等）
+6. notes: 备注信息（如有额外信息可放在这里）
+
+原始文件：%s（类型：%s）
+
+如果内容中包含多个账号，请返回数组格式。如果只有一个账号，也返回数组格式。
+请严格按照以下 JSON 数组格式返回（不要包含任何其他文字）:
+[
+  {
+    "label": "服务名称",
+    "username": "用户名",
+    "password": "密码或空字符串",
+    "website": "网站地址或空字符串",
+    "category": "分类",
+    "notes": "备注或空字符串"
+  }
+]
+
+如果无法识别某些信息，请使用合理的默认值。如果完全无法提取账号信息，返回空数组 []。
+
+用户提供的内容:
+%s`, input.FileName, input.FileType, input.Text)
+
+	// 调用 AI 解析
+	messages := []openAIMessage{
+		{Role: "user", Content: prompt},
+	}
+	content, err := callOpenAIChatAPI(aiConfig.BaseURL, decryptedKey, aiConfig.Model, messages)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 清理 markdown 代码块
+	content = strings.TrimSpace(content)
+	if strings.HasPrefix(content, "```json") {
+		content = strings.TrimPrefix(content, "```json")
+		content = strings.TrimSuffix(content, "```")
+		content = strings.TrimSpace(content)
+	} else if strings.HasPrefix(content, "```") {
+		content = strings.TrimPrefix(content, "```")
+		content = strings.TrimSuffix(content, "```")
+		content = strings.TrimSpace(content)
+	}
+
+	// 尝试解析为数组
+	var credentials []map[string]interface{}
+	if err := json.Unmarshal([]byte(content), &credentials); err != nil {
+		// 尝试解析为单个对象
+		var singleResult map[string]interface{}
+		if err := json.Unmarshal([]byte(content), &singleResult); err == nil {
+			credentials = []map[string]interface{}{singleResult}
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "解析凭据信息失败"})
+			return
+		}
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"credentials": credentials,
+		"count":       len(credentials),
+	})
+}

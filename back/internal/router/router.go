@@ -87,6 +87,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 				ai.POST("/config", aiHandler.SaveAIConfig)
 				ai.POST("/analyze", aiHandler.Analyze)
 				ai.POST("/parse-subscription", aiHandler.ParseSubscription)
+				ai.POST("/parse-credentials", aiHandler.ParseCredentials)
 				ai.GET("/reports", aiHandler.GetReports)
 				ai.GET("/chat", aiHandler.GetChatHistory)
 				ai.POST("/chat", aiHandler.Chat)
