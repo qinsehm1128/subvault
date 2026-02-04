@@ -4,8 +4,14 @@ export interface Credential {
   password?: string;
   label: string;
   notes?: string;
+  website?: string;
+  category?: string;
   createdAt: number;
 }
+
+export type CredentialCategory = '社交' | '购物' | '工作' | '娱乐' | '开发' | '金融' | '教育' | '其他';
+
+export const CREDENTIAL_CATEGORIES: CredentialCategory[] = ['社交', '购物', '工作', '娱乐', '开发', '金融', '教育', '其他'];
 
 export type FrequencyUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS' | 'PERMANENT';
 

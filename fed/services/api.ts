@@ -200,6 +200,23 @@ class ApiService {
     });
   }
 
+  async parseCredentials(data: { text: string; fileName?: string; fileType?: string }) {
+    return this.request<{
+      credentials: {
+        label: string;
+        username: string;
+        password?: string;
+        website?: string;
+        category?: string;
+        notes?: string;
+      }[];
+      count: number;
+    }>('/ai/parse-credentials', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
   async getAIReports() {
     return this.request<{
       id: string;

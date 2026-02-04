@@ -7,6 +7,8 @@ import { SubscriptionModal } from '../components/modals/SubscriptionModal';
 import { AddCredentialModal } from '../components/modals/AddCredentialModal';
 import { ImportCredentialsModal } from '../components/modals/ImportCredentialsModal';
 import { AISubscriptionModal } from '../components/modals/AISubscriptionModal';
+import { AICredentialModal } from '../components/modals/AICredentialModal';
+import { AICredentialPreviewModal } from '../components/modals/AICredentialPreviewModal';
 import { AIPage } from './AIPage';
 import { AnalyticsPage } from './AnalyticsPage';
 import { SettingsPage } from './SettingsPage';
@@ -44,6 +46,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [showAISubModal, setShowAISubModal] = useState(false);
   const [aiParsedData, setAiParsedData] = useState<Partial<Subscription> | null>(null);
   const [pendingAISubscriptions, setPendingAISubscriptions] = useState<Partial<Subscription>[]>([]);
+  // AI 凭据解析相关状态
+  const [showAICredModal, setShowAICredModal] = useState(false);
+  const [showAICredPreview, setShowAICredPreview] = useState(false);
+  const [aiParsedCredentials, setAIParsedCredentials] = useState<Partial<Credential>[]>([]);
+  const [pendingCredential, setPendingCredential] = useState<Partial<Credential> | null>(null);
 
   const handleAddSubscription = () => {
     setEditingSubscription(null);
@@ -97,7 +104,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   // AI 批量解析完成后，依次处理每个订阅
   const handleAIBatchParsed = (dataList: any[]) => {
     if (dataList.length === 0) return;
-    
+
     const parsedList = dataList.map(data => ({
       name: data.name || '',
       cost: data.cost || 0,
@@ -107,13 +114,29 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       website: data.website || '',
       category: data.category || '',
     }));
-    
+
     // 第一个立即显示，其余放入待处理队列
     const [first, ...rest] = parsedList;
     setPendingAISubscriptions(rest);
     setAiParsedData(first);
     setEditingSubscription(null);
     setShowSubModal(true);
+  };
+
+  // AI 解析凭据完成后，显示预览
+  const handleAICredentialsParsed = (credentials: Partial<Credential>[]) => {
+    if (credentials.length === 0) return;
+    setAIParsedCredentials(credentials);
+    setShowAICredPreview(true);
+  };
+
+  // 确认导入 AI 解析的凭据
+  const handleConfirmAICredentials = (credentials: Partial<Credential>[]) => {
+    if (credentials.length === 0) return;
+
+    // 批量添加凭据
+    onBatchAddCredentials(credentials);
+    setAIParsedCredentials([]);
   };
 
   // 渲染主内容区域
@@ -190,19 +213,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <p className="text-slate-400 text-sm mt-1">安全存储您的账号密码</p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <button 
-                        onClick={() => setShowImportModal(true)} 
+                      <button
+                        onClick={() => setShowAICredModal(true)}
+                        className="flex items-center space-x-2 bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 text-white px-4 py-2.5 rounded-xl transition-all duration-200 shadow-sm font-medium text-sm cursor-pointer"
+                      >
+                        <BrainIcon className="w-4 h-4" />
+                        <span>AI解析</span>
+                      </button>
+                      <button
+                        onClick={() => setShowImportModal(true)}
                         className="flex items-center space-x-2 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-600 hover:text-blue-600 px-3 py-2 rounded-lg transition-colors duration-200 font-medium text-sm cursor-pointer"
                       >
                         <UploadIcon className="w-4 h-4" />
-                        <span>导入</span>
+                        <span>导入CSV</span>
                       </button>
-                      <button 
-                        onClick={() => setShowAddCredModal(true)} 
+                      <button
+                        onClick={() => setShowAddCredModal(true)}
                         className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl transition-colors duration-200 shadow-sm font-medium text-sm cursor-pointer"
                       >
                         <PlusIcon className="w-4 h-4" />
-                        <span>新增凭证</span>
+                        <span>手动新增</span>
                       </button>
                     </div>
                   </div>
@@ -269,6 +299,22 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         onClose={() => setShowAISubModal(false)}
         onParsed={handleAIParsed}
         onBatchParsed={handleAIBatchParsed}
+      />
+
+      <AICredentialModal
+        isOpen={showAICredModal}
+        onClose={() => setShowAICredModal(false)}
+        onParsed={handleAICredentialsParsed}
+      />
+
+      <AICredentialPreviewModal
+        isOpen={showAICredPreview}
+        onClose={() => {
+          setShowAICredPreview(false);
+          setAIParsedCredentials([]);
+        }}
+        credentials={aiParsedCredentials}
+        onConfirm={handleConfirmAICredentials}
       />
     </div>
   );

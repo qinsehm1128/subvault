@@ -30,6 +30,8 @@ type Credential struct {
 	Password  string    `json:"password,omitempty"` // 存储 AES-256-GCM 加密后的密文
 	Label     string    `json:"label" gorm:"not null"`
 	Notes     string    `json:"notes,omitempty"` // 存储 AES-256-GCM 加密后的密文
+	Website   string    `json:"website,omitempty"`
+	Category  string    `json:"category" gorm:"default:其他"`
 	CreatedAt time.Time `json:"createdAt"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }

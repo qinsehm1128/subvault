@@ -214,6 +214,8 @@ func (h *VaultHandler) UpdateCredential(c *gin.Context) {
 	updates := map[string]interface{}{
 		"username": updateData.Username,
 		"label":    updateData.Label,
+		"website":  updateData.Website,
+		"category": updateData.Category,
 	}
 
 	if updateData.Password != "" {
@@ -241,6 +243,8 @@ func (h *VaultHandler) UpdateCredential(c *gin.Context) {
 	cred.Password = updateData.Password
 	cred.Label = updateData.Label
 	cred.Notes = updateData.Notes
+	cred.Website = updateData.Website
+	cred.Category = updateData.Category
 
 	c.JSON(http.StatusOK, cred)
 }
