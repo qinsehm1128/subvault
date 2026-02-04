@@ -6,6 +6,7 @@ interface CredentialRowProps {
   credential: Credential;
   onDelete: () => void;
   onEdit?: () => void;
+  onClick?: () => void;
 }
 
 // 分类颜色映射
@@ -20,7 +21,7 @@ const categoryColors: Record<string, string> = {
   '其他': 'bg-slate-100 text-slate-600',
 };
 
-export const CredentialRow: React.FC<CredentialRowProps> = ({ credential: cred, onDelete, onEdit }) => {
+export const CredentialRow: React.FC<CredentialRowProps> = ({ credential: cred, onDelete, onEdit, onClick }) => {
   const [revealed, setRevealed] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -39,7 +40,10 @@ export const CredentialRow: React.FC<CredentialRowProps> = ({ credential: cred, 
   };
 
   return (
-    <div className="group bg-white rounded-xl border border-slate-200/60 hover:border-blue-200 hover:shadow-md transition-all duration-200 overflow-hidden">
+    <div
+      className="group bg-white rounded-xl border border-slate-200/60 hover:border-blue-200 hover:shadow-md transition-all duration-200 overflow-hidden cursor-pointer"
+      onClick={onClick}
+    >
       <div className="p-4 flex items-center">
         {/* 图标 */}
         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -59,7 +63,7 @@ export const CredentialRow: React.FC<CredentialRowProps> = ({ credential: cred, 
           <div className="flex items-center space-x-3">
             <span className="text-xs text-slate-500 truncate max-w-[150px]">{cred.username}</span>
             <button
-              onClick={() => handleCopy(cred.username)}
+              onClick={(e) => { e.stopPropagation(); handleCopy(cred.username); }}
               className="text-[10px] text-slate-400 hover:text-blue-600 cursor-pointer transition-colors duration-200"
             >
               复制
@@ -81,19 +85,19 @@ export const CredentialRow: React.FC<CredentialRowProps> = ({ credential: cred, 
 
         {/* 密码区域 */}
         <div className="flex items-center space-x-2 mr-4">
-          <button 
-            onClick={() => setRevealed(!revealed)}
+          <button
+            onClick={(e) => { e.stopPropagation(); setRevealed(!revealed); }}
             className={`font-mono text-xs px-3 py-1.5 rounded-lg border cursor-pointer transition-all duration-200 ${
-              revealed 
-                ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+              revealed
+                ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                 : 'bg-slate-50 text-slate-400 border-slate-200 hover:border-slate-300'
             }`}
           >
             {revealed ? cred.password || '(空)' : '••••••••'}
           </button>
           {revealed && cred.password && (
-            <button 
-              onClick={() => handleCopy(cred.password || '')}
+            <button
+              onClick={(e) => { e.stopPropagation(); handleCopy(cred.password || ''); }}
               className={`text-xs px-2 py-1 rounded cursor-pointer transition-colors duration-200 ${
                 copied ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 hover:text-blue-600'
               }`}
@@ -105,25 +109,25 @@ export const CredentialRow: React.FC<CredentialRowProps> = ({ credential: cred, 
 
         {/* 操作按钮 */}
         <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <button 
-            onClick={() => setRevealed(!revealed)} 
-            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors duration-200" 
+          <button
+            onClick={(e) => { e.stopPropagation(); setRevealed(!revealed); }}
+            className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors duration-200"
             aria-label={revealed ? '隐藏密码' : '显示密码'}
           >
             <EyeIcon className="w-4 h-4" />
           </button>
           {onEdit && (
-            <button 
-              onClick={onEdit} 
-              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors duration-200" 
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors duration-200"
               aria-label={`编辑凭证 ${cred.label}`}
             >
               <EditIcon className="w-4 h-4" />
             </button>
           )}
-          <button 
-            onClick={onDelete} 
-            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors duration-200" 
+          <button
+            onClick={(e) => { e.stopPropagation(); onDelete(); }}
+            className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors duration-200"
             aria-label={`删除凭证 ${cred.label}`}
           >
             <TrashIcon className="w-4 h-4" />

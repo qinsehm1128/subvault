@@ -9,6 +9,7 @@ import { ImportCredentialsModal } from '../components/modals/ImportCredentialsMo
 import { AISubscriptionModal } from '../components/modals/AISubscriptionModal';
 import { AICredentialModal } from '../components/modals/AICredentialModal';
 import { AICredentialPreviewModal } from '../components/modals/AICredentialPreviewModal';
+import { CredentialDetailModal } from '../components/modals/CredentialDetailModal';
 import { AIPage } from './AIPage';
 import { AnalyticsPage } from './AnalyticsPage';
 import { SettingsPage } from './SettingsPage';
@@ -21,6 +22,7 @@ interface DashboardPageProps {
   onUpdateSubscription: (id: string, sub: Partial<Subscription>) => void;
   onDeleteSubscription: (id: string) => void;
   onAddCredential: (cred: Partial<Credential>) => void;
+  onUpdateCredential?: (id: string, cred: Partial<Credential>) => void;
   onBatchAddCredentials: (creds: Partial<Credential>[]) => void;
   onDeleteCredential: (id: string) => void;
   onExport: () => void;
@@ -33,6 +35,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onUpdateSubscription,
   onDeleteSubscription,
   onAddCredential,
+  onUpdateCredential,
   onBatchAddCredentials,
   onDeleteCredential,
   onExport,
@@ -51,6 +54,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [showAICredPreview, setShowAICredPreview] = useState(false);
   const [aiParsedCredentials, setAIParsedCredentials] = useState<Partial<Credential>[]>([]);
   const [pendingCredential, setPendingCredential] = useState<Partial<Credential> | null>(null);
+  // 凭证详情相关状态
+  const [showCredentialDetail, setShowCredentialDetail] = useState(false);
+  const [selectedCredential, setSelectedCredential] = useState<Credential | null>(null);
+  const [editingCredential, setEditingCredential] = useState<Partial<Credential> | null>(null);
 
   const handleAddSubscription = () => {
     setEditingSubscription(null);
@@ -137,6 +144,28 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     // 批量添加凭据
     onBatchAddCredentials(credentials);
     setAIParsedCredentials([]);
+  };
+
+  // 点击凭证查看详情
+  const handleCredentialClick = (credential: Credential) => {
+    setSelectedCredential(credential);
+    setShowCredentialDetail(true);
+  };
+
+  // 编辑凭证
+  const handleEditCredential = (credential: Credential) => {
+    setEditingCredential(credential);
+    setShowAddCredModal(true);
+  };
+
+  // 保存凭证（新增或更新）
+  const handleSaveCredential = (data: Partial<Credential>) => {
+    if (editingCredential && editingCredential.id && onUpdateCredential) {
+      onUpdateCredential(editingCredential.id as string, data);
+    } else {
+      onAddCredential(data);
+    }
+    setEditingCredential(null);
   };
 
   // 渲染主内容区域
@@ -241,6 +270,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <CredentialRow
                         key={cred.id}
                         credential={cred}
+                        onClick={() => handleCredentialClick(cred)}
+                        onEdit={() => handleEditCredential(cred)}
                         onDelete={() => onDeleteCredential(cred.id)}
                       />
                     ))}
@@ -284,8 +315,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
 
       <AddCredentialModal
         isOpen={showAddCredModal}
-        onClose={() => setShowAddCredModal(false)}
-        onAdd={onAddCredential}
+        onClose={() => {
+          setShowAddCredModal(false);
+          setEditingCredential(null);
+        }}
+        onAdd={handleSaveCredential}
+        initialData={editingCredential}
+      />
+
+      <CredentialDetailModal
+        isOpen={showCredentialDetail}
+        credential={selectedCredential}
+        onClose={() => {
+          setShowCredentialDetail(false);
+          setSelectedCredential(null);
+        }}
+        onEdit={handleEditCredential}
+        onDelete={onDeleteCredential}
       />
 
       <ImportCredentialsModal

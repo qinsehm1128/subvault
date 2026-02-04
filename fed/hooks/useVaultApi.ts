@@ -117,6 +117,8 @@ export const useVaultApi = () => {
       username: newCred.username,
       password: newCred.password || '',
       notes: newCred.notes || '',
+      website: newCred.website || '',
+      category: newCred.category || '其他',
     };
 
     try {
@@ -128,6 +130,31 @@ export const useVaultApi = () => {
       } : null);
     } catch (err: any) {
       setError(err.message || '创建凭证失败');
+      throw err;
+    }
+  };
+
+  const updateCredential = async (id: string, updates: Partial<Credential>) => {
+    if (!updates.label || !updates.username) return;
+
+    const credData = {
+      label: updates.label,
+      username: updates.username,
+      password: updates.password || '',
+      notes: updates.notes || '',
+      website: updates.website || '',
+      category: updates.category || '其他',
+    };
+
+    try {
+      const updated = await api.updateCredential(id, credData);
+      setVaultData(prev => prev ? {
+        ...prev,
+        credentials: prev.credentials.map(c => c.id === id ? { ...c, ...updated } : c),
+        lastUpdated: Date.now(),
+      } : null);
+    } catch (err: any) {
+      setError(err.message || '更新凭证失败');
       throw err;
     }
   };
@@ -145,6 +172,8 @@ export const useVaultApi = () => {
           username: cred.username,
           password: cred.password || '',
           notes: cred.notes || '',
+          website: cred.website || '',
+          category: cred.category || '其他',
         });
         results.push(created);
       } catch (err: any) {
@@ -195,6 +224,7 @@ export const useVaultApi = () => {
     updateSubscription,
     deleteSubscription,
     addCredential,
+    updateCredential,
     batchAddCredentials,
     deleteCredential,
   };
