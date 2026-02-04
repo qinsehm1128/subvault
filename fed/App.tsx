@@ -22,6 +22,7 @@ const App: React.FC = () => {
     updateSubscription,
     deleteSubscription,
     addCredential,
+    updateCredential,
     batchAddCredentials,
     deleteCredential,
   } = useVaultApi();
@@ -89,6 +90,7 @@ const App: React.FC = () => {
       onUpdateSubscription={updateSubscription}
       onDeleteSubscription={deleteSubscription}
       onAddCredential={addCredential}
+      onUpdateCredential={updateCredential}
       onBatchAddCredentials={batchAddCredentials}
       onDeleteCredential={deleteCredential}
       onExport={() => {
