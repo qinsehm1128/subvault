@@ -25,6 +25,8 @@ const App: React.FC = () => {
     updateCredential,
     batchAddCredentials,
     deleteCredential,
+    refreshSubscription,
+    importVaultData,
   } = useVaultApi();
 
   // 登录成功后加载 Vault 数据
@@ -93,6 +95,7 @@ const App: React.FC = () => {
       onUpdateCredential={updateCredential}
       onBatchAddCredentials={batchAddCredentials}
       onDeleteCredential={deleteCredential}
+      onRefreshSubscription={refreshSubscription}
       onExport={() => {
         const blob = new Blob([JSON.stringify(vaultData, null, 2)], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -100,6 +103,25 @@ const App: React.FC = () => {
         a.href = url;
         a.download = `SubVault_Export_${Date.now()}.json`;
         a.click();
+        URL.revokeObjectURL(url);
+      }}
+      onImport={() => {
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = '.json';
+        input.onchange = async (e) => {
+          const file = (e.target as HTMLInputElement).files?.[0];
+          if (!file) return;
+          try {
+            const text = await file.text();
+            const data = JSON.parse(text);
+            const results = await importVaultData(data);
+            alert(`导入完成：${results.subscriptions} 个订阅，${results.credentials} 个凭证，${results.memos} 个备忘录`);
+          } catch {
+            alert('导入失败：文件格式不正确');
+          }
+        };
+        input.click();
       }}
       onLock={lock}
     />

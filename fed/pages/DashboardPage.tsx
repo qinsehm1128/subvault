@@ -25,7 +25,9 @@ interface DashboardPageProps {
   onUpdateCredential?: (id: string, cred: Partial<Credential>) => void;
   onBatchAddCredentials: (creds: Partial<Credential>[]) => void;
   onDeleteCredential: (id: string) => void;
+  onRefreshSubscription: (id: string) => void;
   onExport: () => void;
+  onImport: () => void;
   onLock: () => void;
 }
 
@@ -38,7 +40,9 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onUpdateCredential,
   onBatchAddCredentials,
   onDeleteCredential,
+  onRefreshSubscription,
   onExport,
+  onImport,
   onLock
 }) => {
   const [activeTab, setActiveTab] = useState<TabType>('subscriptions');
@@ -216,6 +220,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         linkedCredential={vaultData.credentials.find(c => c.id === sub.credentialId)}
                         onEdit={() => handleEditSubscription(sub)}
                         onDelete={() => onDeleteSubscription(sub.id)}
+                        onRefresh={() => onRefreshSubscription(sub.id)}
                       />
                     ))}
                     {vaultData.subscriptions.length === 0 && (
@@ -265,7 +270,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       </button>
                     </div>
                   </div>
-                  <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     {vaultData.credentials.map(cred => (
                       <CredentialRow
                         key={cred.id}
@@ -276,7 +281,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       />
                     ))}
                     {vaultData.credentials.length === 0 && (
-                      <div className="py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
+                      <div className="col-span-full py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
                         <KeyIcon className="w-12 h-12 text-slate-200 mb-4" />
                         <p className="text-slate-400 font-medium text-sm">暂无存储凭证</p>
                       </div>
@@ -299,6 +304,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         credentialCount={vaultData.credentials.length}
         memoCount={vaultData.memos?.length || 0}
         onExport={onExport}
+        onImport={onImport}
         onLock={onLock}
       />
 

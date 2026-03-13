@@ -196,6 +196,100 @@ export const useVaultApi = () => {
     return { success: results.length, failed: errors.length };
   };
 
+  const refreshSubscription = async (id: string) => {
+    const sub = vaultData?.subscriptions.find(s => s.id === id);
+    if (!sub || sub.frequencyUnit === 'PERMANENT') return;
+    if (!confirm(`确认「${sub.name}」已续费？将从今天重新计算到期日。`)) return;
+
+    const today = new Date().toISOString().split('T')[0];
+    const newRenewalDate = calculateNextRenewal(today, sub.frequencyAmount, sub.frequencyUnit);
+
+    try {
+      const updated = await api.updateSubscription(id, {
+        ...sub,
+        startDate: today,
+        renewalDate: newRenewalDate,
+      });
+      setVaultData(prev => prev ? {
+        ...prev,
+        subscriptions: prev.subscriptions.map(s => s.id === id ? { ...s, ...updated, startDate: today, renewalDate: newRenewalDate } : s),
+        lastUpdated: Date.now(),
+      } : null);
+    } catch (err: any) {
+      setError(err.message || '刷新订阅失败');
+    }
+  };
+
+  const importVaultData = async (data: Partial<VaultData>) => {
+    const results = { subscriptions: 0, credentials: 0, memos: 0 };
+    const newSubscriptions: Subscription[] = [];
+    const newCredentials: Credential[] = [];
+    const newMemos: Memo[] = [];
+
+    if (data.subscriptions?.length) {
+      for (const sub of data.subscriptions) {
+        try {
+          const created = await api.createSubscription({
+            name: sub.name,
+            cost: sub.cost,
+            currency: sub.currency || 'CNY',
+            frequencyAmount: sub.frequencyAmount || 1,
+            frequencyUnit: sub.frequencyUnit || 'MONTHS',
+            startDate: sub.startDate || new Date().toISOString().split('T')[0],
+            renewalDate: sub.renewalDate || calculateNextRenewal(sub.startDate || new Date().toISOString().split('T')[0], sub.frequencyAmount || 1, sub.frequencyUnit || 'MONTHS'),
+            category: sub.category || '生活',
+            website: sub.website || '',
+            active: sub.active !== false,
+          });
+          newSubscriptions.push(created);
+          results.subscriptions++;
+        } catch { /* skip duplicates */ }
+      }
+    }
+
+    if (data.credentials?.length) {
+      for (const cred of data.credentials) {
+        try {
+          const created = await api.createCredential({
+            label: cred.label,
+            username: cred.username,
+            password: cred.password || '',
+            notes: cred.notes || '',
+            website: cred.website || '',
+            category: cred.category || '其他',
+          });
+          newCredentials.push(created);
+          results.credentials++;
+        } catch { /* skip duplicates */ }
+      }
+    }
+
+    if (data.memos?.length) {
+      for (const memo of data.memos) {
+        try {
+          const created = await api.createMemo({
+            title: memo.title,
+            content: memo.content,
+            category: memo.category || '其他',
+            isPinned: memo.isPinned || false,
+          });
+          newMemos.push(created);
+          results.memos++;
+        } catch { /* skip duplicates */ }
+      }
+    }
+
+    setVaultData(prev => prev ? {
+      ...prev,
+      subscriptions: [...prev.subscriptions, ...newSubscriptions],
+      credentials: [...prev.credentials, ...newCredentials],
+      memos: [...prev.memos, ...newMemos],
+      lastUpdated: Date.now(),
+    } : null);
+
+    return results;
+  };
+
   const deleteCredential = async (id: string) => {
     if (!confirm('确定永久删除该凭证？')) return;
 
@@ -227,5 +321,7 @@ export const useVaultApi = () => {
     updateCredential,
     batchAddCredentials,
     deleteCredential,
+    refreshSubscription,
+    importVaultData,
   };
 };

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Credential } from '../../types';
 import { KeyIcon, GlobeIcon, CopyIcon, CheckIcon, EyeIcon, EditIcon, TrashIcon } from '../Icons';
+import { copyToClipboard } from '../../utils/clipboard';
 
 interface CredentialDetailModalProps {
   isOpen: boolean;
@@ -35,12 +36,10 @@ export const CredentialDetailModal: React.FC<CredentialDetailModalProps> = ({
   if (!isOpen || !credential) return null;
 
   const handleCopy = async (text: string, field: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
+    const ok = await copyToClipboard(text);
+    if (ok) {
       setCopiedField(field);
       setTimeout(() => setCopiedField(null), 2000);
-    } catch (err) {
-      console.error('复制失败:', err);
     }
   };
 

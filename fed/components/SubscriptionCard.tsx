@@ -1,6 +1,6 @@
 import React from 'react';
 import { Subscription, Credential } from '../types';
-import { TrashIcon, KeyIcon, EditIcon } from './Icons';
+import { TrashIcon, KeyIcon, EditIcon, RefreshIcon } from './Icons';
 import { getDaysRemaining, getCycleProgress, formatCurrency, formatFrequency } from '../utils/subscription';
 
 interface SubscriptionCardProps {
@@ -8,43 +8,39 @@ interface SubscriptionCardProps {
   linkedCredential?: Credential;
   onEdit: () => void;
   onDelete: () => void;
+  onRefresh?: () => void;
 }
 
-export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({ 
-  subscription: sub, 
+export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
+  subscription: sub,
   linkedCredential,
   onEdit,
-  onDelete 
+  onDelete,
+  onRefresh,
 }) => {
   const daysLeft = getDaysRemaining(sub.renewalDate);
   const progress = getCycleProgress(sub.startDate, sub.renewalDate);
-  
+
   // 状态颜色
-  let statusBg = 'bg-emerald-50';
   let statusText = 'text-emerald-600';
-  let statusBorder = 'border-emerald-100';
   let progressColor = 'bg-emerald-500';
-  
+
   if (daysLeft <= 3) {
-    statusBg = 'bg-rose-50';
     statusText = 'text-rose-600';
-    statusBorder = 'border-rose-100';
     progressColor = 'bg-rose-500';
   } else if (daysLeft <= 7) {
-    statusBg = 'bg-amber-50';
     statusText = 'text-amber-600';
-    statusBorder = 'border-amber-100';
     progressColor = 'bg-amber-500';
   }
 
   return (
-    <div 
+    <div
       className="group relative bg-white rounded-2xl border border-slate-200/60 hover:border-blue-200 hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden"
       onClick={onEdit}
     >
       {/* 顶部渐变条 */}
       <div className={`h-1 w-full ${progressColor}`} />
-      
+
       <div className="p-5">
         {/* 头部 */}
         <div className="flex justify-between items-start mb-4">
@@ -59,26 +55,36 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               </span>
             </div>
           </div>
-          
+
           {/* 操作按钮 */}
           <div className="flex items-center space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-            <button 
-              onClick={(e) => { e.stopPropagation(); onEdit(); }} 
-              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors duration-200" 
+            {onRefresh && sub.frequencyUnit !== 'PERMANENT' && (
+              <button
+                onClick={(e) => { e.stopPropagation(); onRefresh(); }}
+                className="p-2 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg cursor-pointer transition-colors duration-200"
+                aria-label={`刷新续期 ${sub.name}`}
+                title="已续费，刷新到期时间"
+              >
+                <RefreshIcon className="w-4 h-4" />
+              </button>
+            )}
+            <button
+              onClick={(e) => { e.stopPropagation(); onEdit(); }}
+              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors duration-200"
               aria-label={`编辑 ${sub.name}`}
             >
               <EditIcon className="w-4 h-4" />
             </button>
-            <button 
-              onClick={(e) => { e.stopPropagation(); onDelete(); }} 
-              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors duration-200" 
+            <button
+              onClick={(e) => { e.stopPropagation(); onDelete(); }}
+              className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg cursor-pointer transition-colors duration-200"
               aria-label={`删除 ${sub.name}`}
             >
               <TrashIcon className="w-4 h-4" />
             </button>
           </div>
         </div>
-        
+
         {/* 价格 */}
         <div className="flex items-baseline mb-5">
           <span className="text-2xl font-bold text-slate-900 tracking-tight">
@@ -97,15 +103,26 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
               <span className="text-slate-500 font-medium">
                 {sub.frequencyUnit === 'PERMANENT' ? '授权状态' : '计费周期'}
               </span>
-              <span className={`font-semibold ${statusText}`}>
-                {sub.frequencyUnit === 'PERMANENT' 
-                  ? '永久有效' 
-                  : (daysLeft <= 0 ? '今日扣费' : `${daysLeft} 天后续费`)}
-              </span>
+              <div className="flex items-center space-x-1.5">
+                <span className={`font-semibold ${statusText}`}>
+                  {sub.frequencyUnit === 'PERMANENT'
+                    ? '永久有效'
+                    : (daysLeft <= 0 ? '今日扣费' : `${daysLeft} 天后续费`)}
+                </span>
+                {onRefresh && sub.frequencyUnit !== 'PERMANENT' && daysLeft <= 3 && (
+                  <button
+                    onClick={(e) => { e.stopPropagation(); onRefresh(); }}
+                    className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 hover:bg-emerald-100 cursor-pointer transition-colors font-medium"
+                    title="已续费，点击刷新到期时间"
+                  >
+                    已续费
+                  </button>
+                )}
+              </div>
             </div>
             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
-              <div 
-                className={`h-full ${progressColor} transition-all duration-500 rounded-full`} 
+              <div
+                className={`h-full ${progressColor} transition-all duration-500 rounded-full`}
                 style={{ width: `${sub.frequencyUnit === 'PERMANENT' ? 100 : progress}%` }}
               />
             </div>

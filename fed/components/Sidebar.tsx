@@ -1,5 +1,5 @@
 import React from 'react';
-import { UnlockIcon, CreditCardIcon, KeyIcon, BrainIcon, ChartIcon, SettingsIcon, DownloadIcon, LockIcon, MemoIcon } from './Icons';
+import { UnlockIcon, CreditCardIcon, KeyIcon, BrainIcon, ChartIcon, SettingsIcon, DownloadIcon, UploadIcon, LockIcon, MemoIcon } from './Icons';
 
 interface SidebarItemProps {
   active: boolean;
@@ -35,6 +35,7 @@ interface SidebarProps {
   credentialCount?: number;
   memoCount?: number;
   onExport: () => void;
+  onImport: () => void;
   onLock: () => void;
 }
 
@@ -45,6 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   credentialCount,
   memoCount,
   onExport,
+  onImport,
   onLock
 }) => {
   return (
@@ -109,15 +111,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
       </nav>
 
       <div className="p-4 border-t border-slate-100 space-y-1">
-        <button 
-          onClick={onExport} 
+        <button
+          onClick={onExport}
           className="w-full flex items-center space-x-3 px-3 py-2 text-xs font-medium text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors duration-200 cursor-pointer"
         >
           <DownloadIcon className="w-4 h-4" />
           <span>导出备份</span>
         </button>
-        <button 
-          onClick={onLock} 
+        <button
+          onClick={onImport}
+          className="w-full flex items-center space-x-3 px-3 py-2 text-xs font-medium text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors duration-200 cursor-pointer"
+        >
+          <UploadIcon className="w-4 h-4" />
+          <span>导入备份</span>
+        </button>
+        <button
+          onClick={onLock}
           className="w-full flex items-center space-x-3 px-3 py-2 text-xs font-medium text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors duration-200 cursor-pointer"
         >
           <LockIcon className="w-4 h-4" />
