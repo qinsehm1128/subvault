@@ -4,7 +4,7 @@ import { VaultData, Subscription, Credential, EncryptedStorage } from '../types'
 import { calculateNextRenewal } from '../utils/subscription';
 
 const VAULT_KEY = 'subvault_encrypted_data';
-const INITIAL_VAULT: VaultData = { credentials: [], subscriptions: [], lastUpdated: 0 };
+const INITIAL_VAULT: VaultData = { credentials: [], subscriptions: [], memos: [], lastUpdated: 0 };
 
 export const useVault = () => {
   const [isLocked, setIsLocked] = useState<boolean>(true);

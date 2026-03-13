@@ -13,7 +13,8 @@ import { CredentialDetailModal } from '../components/modals/CredentialDetailModa
 import { AIPage } from './AIPage';
 import { AnalyticsPage } from './AnalyticsPage';
 import { SettingsPage } from './SettingsPage';
-import { PlusIcon, CreditCardIcon, KeyIcon, UploadIcon, BrainIcon } from '../components/Icons';
+import { PlusIcon, CreditCardIcon, KeyIcon, UploadIcon, BrainIcon, GridViewIcon, TableViewIcon } from '../components/Icons';
+import { CredentialTable } from '../components/CredentialTable';
 import { MemoPage } from './MemoPage';
 
 interface DashboardPageProps {
@@ -62,6 +63,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [showCredentialDetail, setShowCredentialDetail] = useState(false);
   const [selectedCredential, setSelectedCredential] = useState<Credential | null>(null);
   const [editingCredential, setEditingCredential] = useState<Partial<Credential> | null>(null);
+  const [credViewMode, setCredViewMode] = useState<'card' | 'table'>('card');
 
   const handleAddSubscription = () => {
     setEditingSubscription(null);
@@ -186,7 +188,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       default:
         return (
           <main className="flex-1 overflow-y-auto px-8 py-8">
-            <div className="max-w-5xl mx-auto">
+            <div className="mx-auto">
               {activeTab === 'subscriptions' && (
                 <div className="space-y-6">
                   <div className="flex justify-between items-end">
@@ -247,6 +249,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <p className="text-slate-400 text-sm mt-1">安全存储您的账号密码</p>
                     </div>
                     <div className="flex items-center space-x-2">
+                      <div className="flex items-center bg-slate-100 rounded-lg p-0.5 mr-1">
+                        <button
+                          onClick={() => setCredViewMode('card')}
+                          className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                            credViewMode === 'card' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                          }`}
+                          title="卡片视图"
+                        >
+                          <GridViewIcon className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => setCredViewMode('table')}
+                          className={`p-1.5 rounded-md transition-colors cursor-pointer ${
+                            credViewMode === 'table' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'
+                          }`}
+                          title="表格视图"
+                        >
+                          <TableViewIcon className="w-4 h-4" />
+                        </button>
+                      </div>
                       <button
                         onClick={() => setShowAICredModal(true)}
                         className="flex items-center space-x-2 bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 text-white px-4 py-2.5 rounded-xl transition-all duration-200 shadow-sm font-medium text-sm cursor-pointer"
@@ -270,23 +292,39 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       </button>
                     </div>
                   </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {vaultData.credentials.map(cred => (
-                      <CredentialRow
-                        key={cred.id}
-                        credential={cred}
-                        onClick={() => handleCredentialClick(cred)}
-                        onEdit={() => handleEditCredential(cred)}
-                        onDelete={() => onDeleteCredential(cred.id)}
+                  {credViewMode === 'card' ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {vaultData.credentials.map(cred => (
+                        <CredentialRow
+                          key={cred.id}
+                          credential={cred}
+                          onClick={() => handleCredentialClick(cred)}
+                          onEdit={() => handleEditCredential(cred)}
+                          onDelete={() => onDeleteCredential(cred.id)}
+                        />
+                      ))}
+                      {vaultData.credentials.length === 0 && (
+                        <div className="col-span-full py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
+                          <KeyIcon className="w-12 h-12 text-slate-200 mb-4" />
+                          <p className="text-slate-400 font-medium text-sm">暂无存储凭证</p>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    vaultData.credentials.length > 0 ? (
+                      <CredentialTable
+                        credentials={vaultData.credentials}
+                        onCredentialClick={handleCredentialClick}
+                        onEdit={handleEditCredential}
+                        onDelete={(id) => onDeleteCredential(id)}
                       />
-                    ))}
-                    {vaultData.credentials.length === 0 && (
-                      <div className="col-span-full py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
+                    ) : (
+                      <div className="py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
                         <KeyIcon className="w-12 h-12 text-slate-200 mb-4" />
                         <p className="text-slate-400 font-medium text-sm">暂无存储凭证</p>
                       </div>
-                    )}
-                  </div>
+                    )
+                  )}
                 </div>
               )}
             </div>

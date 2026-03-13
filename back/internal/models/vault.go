@@ -103,10 +103,29 @@ func (n *NotificationSetting) BeforeCreate(tx *gorm.DB) error {
 	return nil
 }
 
+// TotpSetting TOTP 两步验证设置
+type TotpSetting struct {
+	ID        string    `json:"id" gorm:"primaryKey"`
+	VaultID   string    `json:"vaultId" gorm:"uniqueIndex;not null"`
+	Secret    string    `json:"-" gorm:"not null"` // 存储 AES-256-GCM 加密后的密文
+	Enabled   bool      `json:"enabled" gorm:"default:true"`
+	Verified  bool      `json:"verified" gorm:"default:false"`
+	CreatedAt time.Time `json:"createdAt"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+func (t *TotpSetting) BeforeCreate(tx *gorm.DB) error {
+	if t.ID == "" {
+		t.ID = uuid.New().String()
+	}
+	return nil
+}
+
 // VaultData 用于 API 响应
 type VaultData struct {
 	Credentials   []Credential   `json:"credentials"`
 	Subscriptions []Subscription `json:"subscriptions"`
+	Memos         []Memo         `json:"memos"`
 	LastUpdated   int64          `json:"lastUpdated"`
 }
 

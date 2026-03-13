@@ -29,7 +29,10 @@ class ApiService {
 
     if (!response.ok) {
       const error = await response.json().catch(() => ({ error: '请求失败' }));
-      throw new Error(error.error || '请求失败');
+      const err = new Error(error.error || '请求失败') as any;
+      err.status = response.status;
+      err.data = error;
+      throw err;
     }
 
     return response.json();
@@ -54,10 +57,12 @@ class ApiService {
   }
 
   // === 解锁 ===
-  async unlock(masterKey: string) {
+  async unlock(masterKey: string, totpCode?: string) {
+    const body: Record<string, string> = { masterKey };
+    if (totpCode) body.totpCode = totpCode;
     const data = await this.request<{ token: string; vaultId: string; isNew: boolean }>('/unlock', {
       method: 'POST',
-      body: JSON.stringify({ masterKey }),
+      body: JSON.stringify(body),
     });
     this.setToken(data.token);
     return data;
@@ -77,6 +82,7 @@ class ApiService {
     return this.request<{
       credentials: any[];
       subscriptions: any[];
+      memos: any[];
       lastUpdated: number;
     }>('/vault');
   }
@@ -251,6 +257,30 @@ class ApiService {
     return this.request<{ message: string }>('/ai/chat', {
       method: 'DELETE',
     });
+  }
+
+  // === 两步验证 (TOTP) ===
+  async setupTotp() {
+    return this.request<{ uri: string; secret: string }>('/totp/setup', {
+      method: 'POST',
+    });
+  }
+
+  async verifyTotp(code: string) {
+    return this.request<{ message: string }>('/totp/verify', {
+      method: 'POST',
+      body: JSON.stringify({ code }),
+    });
+  }
+
+  async disableTotp() {
+    return this.request<{ message: string }>('/totp', {
+      method: 'DELETE',
+    });
+  }
+
+  async getTotpStatus() {
+    return this.request<{ enabled: boolean; verified: boolean }>('/totp/status');
   }
 
   // === 标签 ===

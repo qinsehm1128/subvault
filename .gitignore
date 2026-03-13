@@ -2,3 +2,5 @@
 /.shared
 /.vscode
 /ENV-VARIABLES.md
+.workflow
+.env

@@ -26,13 +26,26 @@ func (h *VaultHandler) GetVault(c *gin.Context) {
 
 	var credentials []models.Credential
 	var subscriptions []models.Subscription
+	var memos []models.Memo
 
 	database.DB.Where("vault_id = ?", vaultID).Find(&credentials)
 	database.DB.Where("vault_id = ?", vaultID).Find(&subscriptions)
+	database.DB.Where("vault_id = ?", vaultID).Find(&memos)
 
 	for i := range credentials {
 		credentials[i].Password, _ = crypto.DecryptField(credentials[i].Password, h.cfg.EncryptionKey)
 		credentials[i].Notes, _ = crypto.DecryptField(credentials[i].Notes, h.cfg.EncryptionKey)
+	}
+
+	for i := range memos {
+		if memos[i].Content != "" {
+			decrypted, err := crypto.DecryptField(memos[i].Content, h.cfg.EncryptionKey)
+			if err != nil {
+				memos[i].Content = ""
+			} else {
+				memos[i].Content = decrypted
+			}
+		}
 	}
 
 	if credentials == nil {
@@ -41,10 +54,14 @@ func (h *VaultHandler) GetVault(c *gin.Context) {
 	if subscriptions == nil {
 		subscriptions = []models.Subscription{}
 	}
+	if memos == nil {
+		memos = []models.Memo{}
+	}
 
 	c.JSON(http.StatusOK, models.VaultData{
 		Credentials:   credentials,
 		Subscriptions: subscriptions,
+		Memos:         memos,
 		LastUpdated:   time.Now().UnixMilli(),
 	})
 }

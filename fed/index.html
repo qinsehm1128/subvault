@@ -110,6 +110,42 @@
         outline: 2px solid #5850ec;
         outline-offset: 2px;
       }
+
+      /* Markdown preview styles */
+      .memo-markdown-preview h1 { font-size: 1.5em; font-weight: 700; margin: 0.8em 0 0.4em; color: #1e293b; }
+      .memo-markdown-preview h2 { font-size: 1.3em; font-weight: 700; margin: 0.7em 0 0.35em; color: #1e293b; }
+      .memo-markdown-preview h3 { font-size: 1.15em; font-weight: 600; margin: 0.6em 0 0.3em; color: #334155; }
+      .memo-markdown-preview h4,
+      .memo-markdown-preview h5,
+      .memo-markdown-preview h6 { font-size: 1em; font-weight: 600; margin: 0.5em 0 0.25em; color: #334155; }
+      .memo-markdown-preview p { margin: 0.5em 0; line-height: 1.7; }
+      .memo-markdown-preview ul { list-style: disc; padding-left: 1.5em; margin: 0.5em 0; }
+      .memo-markdown-preview ol { list-style: decimal; padding-left: 1.5em; margin: 0.5em 0; }
+      .memo-markdown-preview li { margin: 0.2em 0; line-height: 1.6; }
+      .memo-markdown-preview li > ul,
+      .memo-markdown-preview li > ol { margin: 0.1em 0; }
+      .memo-markdown-preview a { color: #2563eb; text-decoration: underline; text-underline-offset: 2px; }
+      .memo-markdown-preview a:hover { color: #1d4ed8; }
+      .memo-markdown-preview code { background: #f1f5f9; padding: 0.15em 0.4em; border-radius: 0.25em; font-size: 0.875em; font-family: ui-monospace, monospace; color: #475569; }
+      .memo-markdown-preview pre { background: #f1f5f9; padding: 0.8em 1em; border-radius: 0.5em; overflow-x: auto; margin: 0.6em 0; }
+      .memo-markdown-preview pre code { background: none; padding: 0; font-size: 0.85em; }
+      .memo-markdown-preview blockquote { border-left: 3px solid #cbd5e1; padding-left: 1em; margin: 0.6em 0; color: #64748b; font-style: italic; }
+      .memo-markdown-preview hr { border: none; border-top: 1px solid #e2e8f0; margin: 1em 0; }
+      .memo-markdown-preview table { border-collapse: collapse; width: 100%; margin: 0.6em 0; }
+      .memo-markdown-preview th,
+      .memo-markdown-preview td { border: 1px solid #e2e8f0; padding: 0.4em 0.8em; text-align: left; font-size: 0.875em; }
+      .memo-markdown-preview th { background: #f8fafc; font-weight: 600; }
+      .memo-markdown-preview img { max-width: 100%; border-radius: 0.5em; }
+      .memo-markdown-preview strong { font-weight: 600; }
+
+      /* Compact variant for MemoCard - reset margins for tight display */
+      .memo-markdown-preview--compact p { margin: 0.15em 0; }
+      .memo-markdown-preview--compact h1,
+      .memo-markdown-preview--compact h2,
+      .memo-markdown-preview--compact h3 { font-size: 1em; margin: 0.15em 0; }
+      .memo-markdown-preview--compact ul,
+      .memo-markdown-preview--compact ol { margin: 0.1em 0; }
+      .memo-markdown-preview--compact pre { margin: 0.2em 0; padding: 0.4em 0.6em; }
       
       /* Smooth animations with ease-out */
       .animate-slide-up {

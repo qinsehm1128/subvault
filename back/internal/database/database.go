@@ -6,7 +6,7 @@ import (
 
 	"subvault/internal/models"
 
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -38,6 +38,7 @@ func Init(dbPath string) error {
 		&models.AIChat{},
 		&models.AIReport{},
 		&models.Memo{},
+		&models.TotpSetting{},
 	)
 }
 

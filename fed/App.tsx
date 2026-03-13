@@ -11,6 +11,9 @@ const App: React.FC = () => {
     error: authError,
     unlock,
     lock,
+    totpRequired,
+    unlockWithTotp,
+    cancelTotp,
   } = useAuth();
 
   const {
@@ -52,6 +55,9 @@ const App: React.FC = () => {
         onUnlock={unlock}
         isLoading={authLoading}
         error={authError}
+        totpRequired={totpRequired}
+        onUnlockWithTotp={unlockWithTotp}
+        onCancelTotp={cancelTotp}
       />
     );
   }

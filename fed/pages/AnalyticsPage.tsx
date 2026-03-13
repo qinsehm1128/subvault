@@ -52,7 +52,7 @@ export const AnalyticsPage: React.FC = () => {
 
   return (
     <div className="flex-1 overflow-y-auto bg-slate-50 px-8 py-8">
-      <div className="max-w-6xl mx-auto space-y-6">
+      <div className="mx-auto space-y-6">
         {/* 头部 */}
         <div className="flex justify-between items-end">
           <div>

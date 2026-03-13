@@ -1,4 +1,6 @@
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { Memo } from '../types';
 import { EditIcon, TrashIcon } from './Icons';
 import { copyToClipboard } from '../utils/memoUtils';
@@ -138,10 +140,10 @@ export const MemoCard: React.FC<MemoCardProps> = ({ memo, onEdit, onDelete }) =>
         </div>
         
         {/* Content preview */}
-        <div className="mt-3">
-          <p className="text-sm text-slate-500 leading-relaxed line-clamp-3">
+        <div className="mt-3 text-sm text-slate-500 leading-relaxed line-clamp-3 memo-markdown-preview memo-markdown-preview--compact">
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
             {truncateContent(memo.content, 150)}
-          </p>
+          </ReactMarkdown>
         </div>
 
         {/* Copy success indicator */}

@@ -1,0 +1,25 @@
+:80 {
+	# 后端 API 代理
+	handle /api/* {
+		reverse_proxy localhost:8080
+	}
+
+	# 健康检查
+	handle /health {
+		reverse_proxy localhost:8080
+	}
+
+	# 前端静态文件
+	handle {
+		root * /var/www/html
+		try_files {path} /index.html
+		file_server
+
+		# 静态资源缓存
+		@static path *.js *.css *.png *.jpg *.jpeg *.gif *.ico *.svg *.woff *.woff2 *.ttf *.eot
+		header @static Cache-Control "public, max-age=31536000, immutable"
+	}
+
+	# Gzip 压缩
+	encode gzip
+}

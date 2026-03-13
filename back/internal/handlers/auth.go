@@ -12,6 +12,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/pquerna/otp/totp"
 )
 
 // 固定盐值用于派生 Vault 查找键（不是密码存储，只是用于查找）
@@ -27,6 +28,7 @@ func NewAuthHandler(cfg *config.Config) *AuthHandler {
 
 type UnlockRequest struct {
 	MasterKey string `json:"masterKey" binding:"required,min=1"`
+	TotpCode  string `json:"totpCode,omitempty"`
 }
 
 type AuthResponse struct {
@@ -73,6 +75,28 @@ func (h *AuthHandler) Unlock(c *gin.Context) {
 		if vault.KeyBcrypt != "" && !crypto.CheckPasswordHash(req.MasterKey, vault.KeyBcrypt) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "主密钥错误"})
 			return
+		}
+	}
+
+	// 检查是否启用了两步验证
+	var totpSetting models.TotpSetting
+	if err := database.DB.Where("vault_id = ?", vault.ID).First(&totpSetting).Error; err == nil {
+		// 仅当 enabled=true 且 verified=true 时才强制验证
+		if totpSetting.Enabled && totpSetting.Verified {
+			if req.TotpCode == "" {
+				c.JSON(http.StatusForbidden, gin.H{"error": "需要两步验证", "totp_required": true})
+				return
+			}
+			// 解密 TOTP 密钥
+			secret, decErr := crypto.DecryptField(totpSetting.Secret, h.cfg.EncryptionKey)
+			if decErr != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": "验证失败"})
+				return
+			}
+			if !totp.Validate(req.TotpCode, secret) {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "验证码错误"})
+				return
+			}
 		}
 	}
 

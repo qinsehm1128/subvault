@@ -113,7 +113,7 @@ export const MemoPage: React.FC<MemoPageProps> = ({
 
   return (
     <main className="flex-1 overflow-y-auto px-8 py-8">
-      <div className="max-w-5xl mx-auto">
+      <div className="mx-auto">
         <div className="space-y-6">
           {/* Header */}
           <div className="flex justify-between items-end">

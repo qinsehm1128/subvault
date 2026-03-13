@@ -113,6 +113,16 @@ func Setup(cfg *config.Config) *gin.Engine {
 
 			// 数据分析
 			protected.GET("/analytics", settingsHandler.GetAnalytics)
+
+			// 两步验证 (TOTP)
+			totpHandler := handlers.NewTotpHandler(cfg)
+			totp := protected.Group("/totp")
+			{
+				totp.POST("/setup", totpHandler.SetupTOTP)
+				totp.POST("/verify", totpHandler.VerifyTOTP)
+				totp.DELETE("", totpHandler.DisableTOTP)
+				totp.GET("/status", totpHandler.GetTOTPStatus)
+			}
 		}
 	}
 
