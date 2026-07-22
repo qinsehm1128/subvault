@@ -63,7 +63,9 @@
         color: #272e3b;
         /* 中文不需要过紧的字间距 */
         letter-spacing: 0.01em;
+        overflow-x: hidden;
       }
+      #root { min-width: 0; }
       /* 价格数字等宽显示 */
       .tabular {
         font-variant-numeric: tabular-nums;
@@ -109,6 +111,71 @@
       :focus-visible {
         outline: 2px solid #5850ec;
         outline-offset: 2px;
+      }
+
+      @media (max-width: 767px) {
+        body { letter-spacing: 0; }
+        .mobile-app-shell { height: 100dvh; }
+        .mobile-header { display: flex; }
+        .mobile-sidebar {
+          position: fixed;
+          inset: 0 auto 0 0;
+          width: min(18rem, 86vw);
+          transform: translateX(-100%);
+          transition: transform 0.2s ease-out;
+          padding-bottom: env(safe-area-inset-bottom);
+          overflow-y: auto;
+        }
+        .mobile-sidebar.is-open { transform: translateX(0); }
+        .mobile-content-shell { width: 100%; }
+
+        main[class*="px-8"],
+        div[class*="overflow-y-auto"][class*="px-8"] { padding: 1rem; }
+
+        main > div > div > div[class*="justify-between"],
+        div[class*="overflow-y-auto"] > div > div[class*="justify-between"][class*="items-end"] {
+          align-items: stretch;
+          flex-direction: column;
+          gap: 1rem;
+        }
+        main > div > div > div[class*="justify-between"] > div:last-child,
+        div[class*="overflow-y-auto"] > div > div[class*="justify-between"][class*="items-end"] > div:last-child {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+        }
+        main > div > div > div[class*="justify-between"] > div:last-child > button,
+        div[class*="overflow-y-auto"] > div > div[class*="justify-between"][class*="items-end"] > div:last-child > button {
+          flex: 1 1 auto;
+          justify-content: center;
+          min-height: 2.75rem;
+        }
+
+        .fixed.inset-0[class*="items-center"] { padding: 0.75rem; }
+        .fixed.inset-0[class*="items-center"] > div[class*="bg-white"] {
+          max-height: calc(100dvh - 1.5rem);
+          border-radius: 1rem;
+          display: flex;
+          flex-direction: column;
+        }
+        .fixed.inset-0[class*="items-center"] > div[class*="bg-white"] > div[class*="overflow-y-auto"],
+        .fixed.inset-0[class*="items-center"] > div[class*="bg-white"] > div[class*="space-y"] {
+          min-height: 0;
+          overflow-y: auto;
+        }
+        .fixed.inset-0 [class*="p-7"] { padding: 1.25rem; }
+        .fixed.inset-0 [class*="p-6"] { padding: 1rem; }
+        .fixed.inset-0 [class*="grid-cols-2"] { grid-template-columns: minmax(0, 1fr); }
+
+        .credential-table { -webkit-overflow-scrolling: touch; }
+        .credential-table [class*="opacity-0"] { opacity: 1; }
+        .memo-markdown-preview { overflow-wrap: anywhere; }
+        .memo-markdown-preview table { display: block; overflow-x: auto; }
+        .memo-markdown-preview pre { max-width: 100%; }
+
+        button, input, select, textarea { max-width: 100%; }
+        input, select, textarea { font-size: 16px; }
+        h2 { overflow-wrap: anywhere; }
       }
 
       /* Markdown preview styles */

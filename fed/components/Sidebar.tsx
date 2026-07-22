@@ -37,6 +37,8 @@ interface SidebarProps {
   onExport: () => void;
   onImport: () => void;
   onLock: () => void;
+  isOpen?: boolean;
+  onClose?: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -47,10 +49,26 @@ export const Sidebar: React.FC<SidebarProps> = ({
   memoCount,
   onExport,
   onImport,
-  onLock
+  onLock,
+  isOpen = false,
+  onClose,
 }) => {
+  const changeTab = (tab: TabType) => {
+    onTabChange(tab);
+    onClose?.();
+  };
+
   return (
-    <aside className="w-56 flex flex-col bg-white border-r border-slate-200/60 z-20">
+    <>
+      {isOpen && (
+        <button
+          type="button"
+          aria-label="关闭导航"
+          className="mobile-nav-backdrop fixed inset-0 z-30 bg-slate-900/30"
+          onClick={onClose}
+        />
+      )}
+    <aside className={`mobile-sidebar w-56 flex flex-col bg-white border-r border-slate-200/60 z-40 ${isOpen ? 'is-open' : ''}`} aria-label="主导航">
       <div className="p-5 flex items-center space-x-3">
         <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-sm">
           <UnlockIcon className="w-5 h-5 text-white" />
@@ -61,21 +79,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
       <nav className="flex-1 px-3 space-y-1 mt-4">
         <SidebarItem 
           active={activeTab === 'subscriptions'} 
-          onClick={() => onTabChange('subscriptions')} 
+          onClick={() => changeTab('subscriptions')}
           icon={<CreditCardIcon className="w-4 h-4" />} 
           label="服务订阅" 
           count={subscriptionCount} 
         />
         <SidebarItem 
           active={activeTab === 'credentials'} 
-          onClick={() => onTabChange('credentials')} 
+          onClick={() => changeTab('credentials')}
           icon={<KeyIcon className="w-4 h-4" />} 
           label="凭证管理" 
           count={credentialCount} 
         />
         <SidebarItem 
           active={activeTab === 'memos'} 
-          onClick={() => onTabChange('memos')} 
+          onClick={() => changeTab('memos')}
           icon={<MemoIcon className="w-4 h-4" />} 
           label="备忘录" 
           count={memoCount} 
@@ -87,13 +105,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         
         <SidebarItem 
           active={activeTab === 'analytics'} 
-          onClick={() => onTabChange('analytics')} 
+          onClick={() => changeTab('analytics')}
           icon={<ChartIcon className="w-4 h-4" />} 
           label="数据分析" 
         />
         <SidebarItem 
           active={activeTab === 'ai'} 
-          onClick={() => onTabChange('ai')} 
+          onClick={() => changeTab('ai')}
           icon={<BrainIcon className="w-4 h-4" />} 
           label="智能助手" 
         />
@@ -104,7 +122,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         
         <SidebarItem 
           active={activeTab === 'settings'} 
-          onClick={() => onTabChange('settings')} 
+          onClick={() => changeTab('settings')}
           icon={<SettingsIcon className="w-4 h-4" />} 
           label="标签与通知" 
         />
@@ -134,5 +152,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </button>
       </div>
     </aside>
+    </>
   );
 };

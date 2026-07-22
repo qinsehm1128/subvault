@@ -64,6 +64,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [selectedCredential, setSelectedCredential] = useState<Credential | null>(null);
   const [editingCredential, setEditingCredential] = useState<Partial<Credential> | null>(null);
   const [credViewMode, setCredViewMode] = useState<'card' | 'table'>('card');
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   const handleAddSubscription = () => {
     setEditingSubscription(null);
@@ -334,7 +335,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   };
 
   return (
-    <div className="flex h-screen bg-slate-50 font-sans overflow-hidden">
+    <div className="mobile-app-shell flex h-screen bg-slate-50 font-sans overflow-hidden">
       <Sidebar
         activeTab={activeTab}
         onTabChange={setActiveTab}
@@ -344,9 +345,30 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         onExport={onExport}
         onImport={onImport}
         onLock={onLock}
+        isOpen={isMobileNavOpen}
+        onClose={() => setIsMobileNavOpen(false)}
       />
 
-      {renderContent()}
+      <div className="mobile-content-shell flex min-w-0 flex-1 flex-col">
+        <header className="mobile-header hidden h-14 shrink-0 items-center justify-between border-b border-slate-200/60 bg-white px-4">
+          <button
+            type="button"
+            aria-label="打开导航"
+            aria-expanded={isMobileNavOpen}
+            onClick={() => setIsMobileNavOpen(true)}
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-600 hover:bg-slate-50"
+          >
+            <span className="flex w-5 flex-col gap-1.5" aria-hidden="true">
+              <span className="h-0.5 w-full bg-current" />
+              <span className="h-0.5 w-full bg-current" />
+              <span className="h-0.5 w-full bg-current" />
+            </span>
+          </button>
+          <span className="font-bold text-slate-900">SubVault</span>
+          <span className="h-10 w-10" aria-hidden="true" />
+        </header>
+        {renderContent()}
+      </div>
 
       <SubscriptionModal
         isOpen={showSubModal}
