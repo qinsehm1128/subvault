@@ -41,6 +41,11 @@ interface SidebarProps {
   onClose?: () => void;
 }
 
+export const runSidebarAction = (action: () => void, onClose?: () => void) => {
+  onClose?.();
+  action();
+};
+
 export const Sidebar: React.FC<SidebarProps> = ({
   activeTab,
   onTabChange,
@@ -130,21 +135,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       <div className="p-4 border-t border-slate-100 space-y-1">
         <button
-          onClick={onExport}
+          onClick={() => runSidebarAction(onExport, onClose)}
           className="w-full flex items-center space-x-3 px-3 py-2 text-xs font-medium text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors duration-200 cursor-pointer"
         >
           <DownloadIcon className="w-4 h-4" />
           <span>导出备份</span>
         </button>
         <button
-          onClick={onImport}
+          onClick={() => runSidebarAction(onImport, onClose)}
           className="w-full flex items-center space-x-3 px-3 py-2 text-xs font-medium text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors duration-200 cursor-pointer"
         >
           <UploadIcon className="w-4 h-4" />
           <span>导入备份</span>
         </button>
         <button
-          onClick={onLock}
+          onClick={() => runSidebarAction(onLock, onClose)}
           className="w-full flex items-center space-x-3 px-3 py-2 text-xs font-medium text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg transition-colors duration-200 cursor-pointer"
         >
           <LockIcon className="w-4 h-4" />
