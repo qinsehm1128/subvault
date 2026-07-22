@@ -144,8 +144,8 @@ export const CredentialTable: React.FC<CredentialTableProps> = ({
   onDelete,
 }) => {
   return (
-    <div className="bg-white rounded-2xl border border-slate-200/60 overflow-hidden">
-      <table className="w-full">
+    <div className="credential-table bg-white rounded-2xl border border-slate-200/60 overflow-x-auto">
+      <table className="w-full min-w-[720px]">
         <thead>
           <tr className="border-b border-slate-100 bg-slate-50/50">
             <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">名称</th>
