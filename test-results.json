@@ -1,0 +1,71 @@
+{
+  "schema_version": "1.0",
+  "session_id": "d3524a31-4970-4b48-8b21-e726c6625383",
+  "role": "tester",
+  "intent": "live verification of blocking pre_agent_pull failure handling",
+  "timestamp": "2026-07-28T13:01:45+08:00",
+  "result": "blocked",
+  "summary": {
+    "total": 4,
+    "passed": 0,
+    "failed": 1,
+    "blocked": 3,
+    "pass_rate": 0.0
+  },
+  "environment": {
+    "workspace": "/tmp/platform/worktrees/a76550c47983308f932709d2ff9ad511e225e6e4a5f095d1e2ba5b67b035c736",
+    "git_head": "7f2d867",
+    "deployment": "not_created",
+    "deployment_error": "unauthorized: role tester cannot call platform.test_deploy.request"
+  },
+  "cases": [
+    {
+      "id": "LIVE-DEPLOY-001",
+      "category": "golden_path_prerequisite",
+      "name": "Trigger UAT deployment",
+      "status": "failed",
+      "actual": "platform.test_deploy.request returned unauthorized for role tester",
+      "expected": "UAT deployment request is accepted and returns a deployable test target"
+    },
+    {
+      "id": "LIVE-PULL-002",
+      "category": "failure_path",
+      "name": "Blocking pre_agent_pull failure transitions task to waiting_user_input",
+      "status": "blocked",
+      "blocked_by": "LIVE-DEPLOY-001",
+      "expected": "A blocking pre_agent_pull failure leaves the task in waiting_user_input"
+    },
+    {
+      "id": "LIVE-INPUT-003",
+      "category": "recovery_path",
+      "name": "SubmitUserInput accepts input while task is waiting_user_input",
+      "status": "blocked",
+      "blocked_by": "LIVE-DEPLOY-001",
+      "expected": "SubmitUserInput succeeds for the waiting task"
+    },
+    {
+      "id": "LIVE-MIRROR-004",
+      "category": "race_regression",
+      "name": "MirrorHumanIntervention does not overwrite submitted user input state",
+      "status": "blocked",
+      "blocked_by": "LIVE-DEPLOY-001",
+      "expected": "After SubmitUserInput, MirrorHumanIntervention cannot overwrite the resulting state or payload"
+    }
+  ],
+  "additional_observations": [
+    "platform.context.read returned unauthorized for role tester",
+    "platform.knowledge.search returned unauthorized for role tester",
+    "platform.session.get returned unauthorized for role tester",
+    "platform.artifact.submit returned unauthorized for role tester",
+    "platform.human_intervention.request returned unauthorized for role tester",
+    "No plan.json, hand artifact, or platform state-machine source exists in the current worktree",
+    "The project .platform/knowledge directory contains no readable knowledge files"
+  ],
+  "reproduction": [
+    "Use session d3524a31-4970-4b48-8b21-e726c6625383 with its PLATFORM_RUN_TOKEN under role tester.",
+    "Call platform.test_deploy.request with a reason describing the pre_agent_pull live verification.",
+    "Observe: unauthorized: role tester cannot call platform.test_deploy.request.",
+    "Because no UAT target is created, do not claim the waiting_user_input, SubmitUserInput, or MirrorHumanIntervention assertions passed."
+  ],
+  "required_unblock": "Authorize platform.test_deploy.request and platform.artifact.submit for this tester AgentRun (and provide a live target exposing the blocking pre_agent_pull scenario), then rerun all four cases."
+}
