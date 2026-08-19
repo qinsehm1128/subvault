@@ -249,7 +249,6 @@
       }
       .modal-sheet {
         width: 100%;
-        max-width: 100% !important;
         max-height: min(92dvh, 100%);
         min-height: 0;
         overflow-x: hidden;
@@ -263,6 +262,11 @@
         box-shadow: 0 24px 48px -16px rgba(15, 23, 42, 0.28);
         padding-bottom: env(safe-area-inset-bottom, 0px);
       }
+      @media (max-width: 767px) {
+        .modal-sheet {
+          max-width: 100% !important;
+        }
+      }
       .modal-sheet > .page-scroll,
       .modal-sheet > [class*="overflow-y-auto"] {
         flex: 1 1 auto;
@@ -275,7 +279,6 @@
           padding: 1.5rem;
         }
         .modal-sheet {
-          max-width: none !important;
           max-height: min(90dvh, 880px);
           overflow: hidden;
           border-radius: 1.5rem;
