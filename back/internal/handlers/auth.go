@@ -10,6 +10,7 @@ import (
 	"subvault/internal/database"
 	"subvault/internal/middleware"
 	"subvault/internal/models"
+	"subvault/internal/recovery"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -69,8 +70,10 @@ func (h *AuthHandler) Unlock(c *gin.Context) {
 				return
 			}
 			if !totp.Validate(req.TotpCode, secret) {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "验证码错误"})
-				return
+				if !recovery.Consume(database.DB, vault.ID, req.TotpCode) {
+					c.JSON(http.StatusUnauthorized, gin.H{"error": "验证码错误"})
+					return
+				}
 			}
 		}
 	}

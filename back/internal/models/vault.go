@@ -1,6 +1,7 @@
 package models
 
 import (
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -58,7 +59,15 @@ type Subscription struct {
 	CredentialID    *string   `json:"credentialId,omitempty"`
 	Website         string    `json:"website,omitempty"`
 	Active          bool      `json:"active" gorm:"default:true"`
-	AutoRotate      bool      `json:"autoRotate" gorm:"default:false"` // 到期后自动进入下一周期
+	AutoRotate      bool      `json:"autoRotate" gorm:"default:false"`
+	Status          string    `json:"status" gorm:"default:active"` // active, trial, paused, canceled
+	PaymentMethod   string    `json:"paymentMethod"`
+	CardLast4       string    `json:"cardLast4"`
+	CancelURL       string    `json:"cancelUrl"`
+	TrialEndsOn     string    `json:"trialEndsOn"`
+	PromoEndsOn     string    `json:"promoEndsOn"`
+	ReminderDays    string    `json:"reminderDays"` // 覆盖全局 Webhook 天数，空则用全局
+	Notes           string    `json:"notes"`
 	CreatedAt       time.Time `json:"createdAt"`
 	UpdatedAt       time.Time `json:"updatedAt"`
 	Tags            []Tag     `json:"tags,omitempty" gorm:"many2many:subscription_tags;"`
@@ -68,7 +77,39 @@ func (s *Subscription) BeforeCreate(tx *gorm.DB) error {
 	if s.ID == "" {
 		s.ID = uuid.New().String()
 	}
+	s.NormalizeStatus()
 	return nil
+}
+
+func (s *Subscription) BeforeSave(tx *gorm.DB) error {
+	s.NormalizeStatus()
+	return nil
+}
+
+func (s *Subscription) NormalizeStatus() {
+	switch strings.ToLower(strings.TrimSpace(s.Status)) {
+	case "trial":
+		s.Status = "trial"
+		s.Active = true
+	case "paused":
+		s.Status = "paused"
+		s.Active = false
+	case "canceled", "cancelled":
+		s.Status = "canceled"
+		s.Active = false
+	default:
+		if s.Status == "" && !s.Active {
+			s.Status = "paused"
+			return
+		}
+		s.Status = "active"
+		s.Active = true
+	}
+}
+
+func (s *Subscription) IsTracked() bool {
+	s.NormalizeStatus()
+	return s.Status == "active" || s.Status == "trial"
 }
 
 // Tag 自定义标签
@@ -97,8 +138,61 @@ type NotificationSetting struct {
 	WebhookURL        string    `json:"webhookUrl"`
 	WebhookPlatform   string    `json:"webhookPlatform" gorm:"default:auto"` // auto, feishu, wecom, dingtalk, generic
 	WebhookDaysBefore string    `json:"webhookDaysBefore" gorm:"default:1,2,3"`
+	WebhookSecret     string    `json:"webhookSecret"`
+	CalendarToken     string    `json:"calendarToken"`
+	BaseCurrency      string    `json:"baseCurrency" gorm:"default:CNY"`
 	CreatedAt         time.Time `json:"createdAt"`
 	UpdatedAt         time.Time `json:"updatedAt"`
+}
+
+type PriceHistory struct {
+	ID             string    `json:"id" gorm:"primaryKey"`
+	VaultID        string    `json:"vaultId" gorm:"index;not null"`
+	SubscriptionID string    `json:"subscriptionId" gorm:"index;not null"`
+	OldCost        float64   `json:"oldCost"`
+	NewCost        float64   `json:"newCost"`
+	Currency       string    `json:"currency"`
+	CreatedAt      time.Time `json:"createdAt"`
+}
+
+func (p *PriceHistory) BeforeCreate(tx *gorm.DB) error {
+	if p.ID == "" {
+		p.ID = uuid.New().String()
+	}
+	return nil
+}
+
+type RenewalEvent struct {
+	ID             string    `json:"id" gorm:"primaryKey"`
+	VaultID        string    `json:"vaultId" gorm:"index;not null"`
+	SubscriptionID string    `json:"subscriptionId" gorm:"index;not null"`
+	Amount         float64   `json:"amount"`
+	Currency       string    `json:"currency"`
+	OccurredOn     string    `json:"occurredOn" gorm:"index"`
+	Source         string    `json:"source"` // rotate, manual
+	CreatedAt      time.Time `json:"createdAt"`
+}
+
+func (e *RenewalEvent) BeforeCreate(tx *gorm.DB) error {
+	if e.ID == "" {
+		e.ID = uuid.New().String()
+	}
+	return nil
+}
+
+type TotpRecoveryCode struct {
+	ID        string     `json:"id" gorm:"primaryKey"`
+	VaultID   string     `json:"vaultId" gorm:"index;not null"`
+	CodeHash  string     `json:"-" gorm:"not null"`
+	UsedAt    *time.Time `json:"usedAt,omitempty"`
+	CreatedAt time.Time  `json:"createdAt"`
+}
+
+func (c *TotpRecoveryCode) BeforeCreate(tx *gorm.DB) error {
+	if c.ID == "" {
+		c.ID = uuid.New().String()
+	}
+	return nil
 }
 
 // WebhookDelivery 避免同一订阅同一天重复推送
@@ -107,7 +201,8 @@ type WebhookDelivery struct {
 	VaultID        string    `json:"vaultId" gorm:"uniqueIndex:idx_webhook_delivery;not null"`
 	SubscriptionID string    `json:"subscriptionId" gorm:"uniqueIndex:idx_webhook_delivery;not null"`
 	DaysLeft       int       `json:"daysLeft" gorm:"uniqueIndex:idx_webhook_delivery"`
-	SentDate       string    `json:"sentDate" gorm:"uniqueIndex:idx_webhook_delivery"` // Asia/Shanghai YYYY-MM-DD
+	SentDate       string    `json:"sentDate" gorm:"uniqueIndex:idx_webhook_delivery"`
+	Kind           string    `json:"kind" gorm:"uniqueIndex:idx_webhook_delivery;default:renewal"` // renewal, trial, promo
 	CreatedAt      time.Time `json:"createdAt"`
 }
 

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { VaultData, Subscription, Credential } from '../types';
 import { Sidebar, TabType } from '../components/Sidebar';
 import { SubscriptionCard } from '../components/SubscriptionCard';
@@ -17,6 +17,8 @@ import { PlusIcon, CreditCardIcon, KeyIcon, UploadIcon, BrainIcon, GridViewIcon,
 import { CredentialTable } from '../components/CredentialTable';
 import { MemoPage } from './MemoPage';
 import { MobileBottomNav } from '../components/MobileBottomNav';
+import { api } from '../services/api';
+import { passwordIssues } from '../utils/password';
 
 const TAB_TITLES: Record<TabType, string> = {
   subscriptions: '服务订阅',
@@ -75,6 +77,36 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [editingCredential, setEditingCredential] = useState<Partial<Credential> | null>(null);
   const [credViewMode, setCredViewMode] = useState<'card' | 'table'>('card');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const [subQuery, setSubQuery] = useState('');
+  const [subStatus, setSubStatus] = useState('all');
+  const [subView, setSubView] = useState<'grid' | 'calendar'>('grid');
+  const [credQuery, setCredQuery] = useState('');
+  const [insights, setInsights] = useState<{ kind: string; title: string; detail: string }[]>([]);
+
+  const filteredSubs = useMemo(() => {
+    return vaultData.subscriptions.filter(sub => {
+      const status = sub.status || (sub.active === false ? 'paused' : 'active');
+      if (subStatus !== 'all' && status !== subStatus) return false;
+      const q = subQuery.trim().toLowerCase();
+      if (!q) return true;
+      return [sub.name, sub.category, sub.website, sub.paymentMethod, sub.cardLast4].some(v => (v || '').toLowerCase().includes(q));
+    });
+  }, [vaultData.subscriptions, subQuery, subStatus]);
+
+  const filteredCreds = useMemo(() => {
+    const q = credQuery.trim().toLowerCase();
+    if (!q) return vaultData.credentials;
+    return vaultData.credentials.filter(c => [c.label, c.username, c.website, c.category].some(v => (v || '').toLowerCase().includes(q)));
+  }, [vaultData.credentials, credQuery]);
+
+  useEffect(() => {
+    if (activeTab !== 'subscriptions') return;
+    api.getInsights().then(data => setInsights(data.insights || [])).catch(() => setInsights([]));
+  }, [activeTab, vaultData.subscriptions.length]);
+
+  const weakPasswords = useMemo(() => {
+    return vaultData.credentials.filter(c => passwordIssues(c.password).length > 0).length;
+  }, [vaultData.credentials]);
 
   const handleTabChange = (tab: TabType) => {
     setActiveTab(tab);
@@ -242,9 +274,46 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       </button>
                     </div>
                   </div>
+
+                  {(insights.length > 0 || weakPasswords > 0) && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                      {weakPasswords > 0 && (
+                        <div className="text-xs bg-amber-50 text-amber-700 rounded-xl px-3 py-2">有 {weakPasswords} 个凭证密码偏弱，建议在凭证页搜索后更新。</div>
+                      )}
+                      {insights.slice(0, 4).map((item, idx) => (
+                        <div key={idx} className="text-xs bg-blue-50 text-blue-700 rounded-xl px-3 py-2">
+                          <span className="font-medium">{item.title}</span>
+                          {item.detail ? ` · ${item.detail}` : ''}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="flex flex-col md:flex-row gap-2">
+                    <input
+                      value={subQuery}
+                      onChange={e => setSubQuery(e.target.value)}
+                      placeholder="搜索名称、分类、网站、卡号"
+                      className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-400"
+                    />
+                    <select value={subStatus} onChange={e => setSubStatus(e.target.value)} className="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm">
+                      <option value="all">全部状态</option>
+                      <option value="active">生效中</option>
+                      <option value="trial">试用</option>
+                      <option value="paused">已暂停</option>
+                      <option value="canceled">已取消</option>
+                    </select>
+                    <div className="flex bg-slate-100 rounded-xl p-0.5">
+                      <button onClick={() => setSubView('grid')} className={`px-3 py-2 text-xs rounded-lg ${subView === 'grid' ? 'bg-white text-blue-600' : 'text-slate-500'}`}>卡片</button>
+                      <button onClick={() => setSubView('calendar')} className={`px-3 py-2 text-xs rounded-lg ${subView === 'calendar' ? 'bg-white text-blue-600' : 'text-slate-500'}`}>日历</button>
+                    </div>
+                  </div>
                   
+                  {subView === 'calendar' ? (
+                    <RenewalCalendar subscriptions={filteredSubs} onEdit={handleEditSubscription} />
+                  ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {vaultData.subscriptions.map(sub => (
+                    {filteredSubs.map(sub => (
                       <SubscriptionCard
                         key={sub.id}
                         subscription={sub}
@@ -252,8 +321,15 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         onEdit={() => handleEditSubscription(sub)}
                         onDelete={() => onDeleteSubscription(sub.id)}
                         onRefresh={() => onRefreshSubscription(sub.id)}
+                        onOpenCredential={() => {
+                          const cred = vaultData.credentials.find(c => c.id === sub.credentialId);
+                          if (cred) handleCredentialClick(cred);
+                        }}
                       />
                     ))}
+                    {filteredSubs.length === 0 && vaultData.subscriptions.length > 0 && (
+                      <div className="col-span-full py-10 text-center text-sm text-slate-400 bg-white border border-slate-200/60 rounded-2xl">没有匹配的订阅</div>
+                    )}
                     {vaultData.subscriptions.length === 0 && (
                       <div className="col-span-full py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
                         <CreditCardIcon className="w-12 h-12 text-slate-200 mb-4" />
@@ -267,6 +343,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       </div>
                     )}
                   </div>
+                  )}
                 </div>
               )}
 
@@ -299,6 +376,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </button>
                       </div>
                     </div>
+                    <input
+                      value={credQuery}
+                      onChange={e => setCredQuery(e.target.value)}
+                      placeholder="搜索凭证名称、账号、网站"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-400"
+                    />
                     <div className="flex items-center gap-2 overflow-x-auto">
                       <button
                         onClick={() => setShowAICredModal(true)}
@@ -329,7 +412,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <div className="hidden md:block">
                         {vaultData.credentials.length > 0 ? (
                           <CredentialTable
-                            credentials={vaultData.credentials}
+                            credentials={filteredCreds}
                             onCredentialClick={handleCredentialClick}
                             onEdit={handleEditCredential}
                             onDelete={(id) => onDeleteCredential(id)}
@@ -342,7 +425,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         )}
                       </div>
                       <div className="grid grid-cols-1 gap-4 md:hidden">
-                        {vaultData.credentials.map(cred => (
+                        {filteredCreds.map(cred => (
                           <CredentialRow
                             key={cred.id}
                             credential={cred}
@@ -361,7 +444,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     </>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {vaultData.credentials.map(cred => (
+                      {filteredCreds.map(cred => (
                         <CredentialRow
                           key={cred.id}
                           credential={cred}
@@ -487,6 +570,49 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         credentials={aiParsedCredentials}
         onConfirm={handleConfirmAICredentials}
       />
+    </div>
+  );
+};
+
+const RenewalCalendar: React.FC<{ subscriptions: Subscription[]; onEdit: (sub: Subscription) => void }> = ({ subscriptions, onEdit }) => {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+  const first = new Date(year, month, 1);
+  const startWeekday = first.getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const cells: Array<{ day: number | null }> = [];
+  for (let i = 0; i < startWeekday; i++) cells.push({ day: null });
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ day: d });
+
+  const byDay: Record<number, Subscription[]> = {};
+  subscriptions.forEach(sub => {
+    if (!sub.renewalDate) return;
+    const [y, m, d] = sub.renewalDate.split('-').map(Number);
+    if (y === year && m === month + 1) {
+      byDay[d] = byDay[d] || [];
+      byDay[d].push(sub);
+    }
+  });
+
+  return (
+    <div className="bg-white border border-slate-200/60 rounded-2xl p-4">
+      <p className="text-sm font-semibold text-slate-700 mb-3">{year}年{month + 1}月续费</p>
+      <div className="grid grid-cols-7 gap-1 text-center text-[11px] text-slate-400 mb-2">
+        {['日','一','二','三','四','五','六'].map(d => <div key={d}>{d}</div>)}
+      </div>
+      <div className="grid grid-cols-7 gap-1">
+        {cells.map((cell, idx) => (
+          <div key={idx} className="min-h-[72px] rounded-lg bg-slate-50 p-1">
+            {cell.day && <div className="text-[11px] text-slate-400 mb-1">{cell.day}</div>}
+            {cell.day && (byDay[cell.day] || []).map(sub => (
+              <button key={sub.id} onClick={() => onEdit(sub)} className="block w-full text-left text-[10px] truncate text-blue-600 bg-blue-50 rounded px-1 py-0.5 mb-0.5">
+                {sub.name}
+              </button>
+            ))}
+          </div>
+        ))}
+      </div>
     </div>
   );
 };

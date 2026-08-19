@@ -39,6 +39,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 		// 解锁（无需认证，但有更严格的速率限制）
 		authHandler := handlers.NewAuthHandler(cfg)
 		v1.POST("/unlock", middleware.AuthRateLimitMiddleware(), authHandler.Unlock)
+		v1.GET("/calendar/:token", handlers.NewSettingsHandler().PublicCalendar)
 
 		// 需要认证的路由
 		protected := v1.Group("")
@@ -111,6 +112,8 @@ func Setup(cfg *config.Config) *gin.Engine {
 			protected.POST("/notifications/settings", settingsHandler.SaveNotificationSettings)
 			protected.POST("/notifications/webhook/test", settingsHandler.TestWebhook)
 			protected.GET("/notifications/upcoming", settingsHandler.GetUpcomingRenewals)
+			protected.GET("/insights", settingsHandler.GetInsights)
+			protected.POST("/notifications/calendar-token", settingsHandler.RotateCalendarToken)
 
 			// 数据分析
 			protected.GET("/analytics", settingsHandler.GetAnalytics)

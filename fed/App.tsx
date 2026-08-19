@@ -122,7 +122,8 @@ const App: React.FC = () => {
             const text = await file.text();
             const data = JSON.parse(text);
             const results = await importVaultData(data);
-            alert(`导入完成：${results.subscriptions} 个订阅，${results.credentials} 个凭证，${results.memos} 个备忘录`);
+            const failText = results.failed ? `\n失败 ${results.failed} 条：${results.failures.slice(0, 8).join('、')}` : '';
+            alert(`导入完成：${results.subscriptions} 个订阅，${results.credentials} 个凭证，${results.memos} 个备忘录${failText}`);
           } catch {
             alert('导入失败：文件格式不正确');
           }

@@ -35,12 +35,13 @@ export const SettingsPage: React.FC = () => {
   const [tags, setTags] = useState<Tag[]>([]);
   const [newTagName, setNewTagName] = useState('');
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
-  const [notifyEnabled, setNotifyEnabled] = useState(true);
-  const [notifyDays, setNotifyDays] = useState('1,3,7');
   const [webhookEnabled, setWebhookEnabled] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [webhookPlatform, setWebhookPlatform] = useState('auto');
   const [webhookDays, setWebhookDays] = useState('1,2,3');
+  const [webhookSecret, setWebhookSecret] = useState('');
+  const [calendarToken, setCalendarToken] = useState('');
+  const [recoveryCodes, setRecoveryCodes] = useState<string[]>([]);
   const [webhookMessage, setWebhookMessage] = useState('');
   const [webhookOk, setWebhookOk] = useState(true);
   const [webhookBusy, setWebhookBusy] = useState(false);
@@ -62,8 +63,8 @@ export const SettingsPage: React.FC = () => {
     loadData();
   }, []);
 
-  const loadData = async () => {
-    setIsLoading(true);
+  const loadData = async (silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
       const [tagsData, notifySettings, upcomingData] = await Promise.all([
         api.getTags(),
@@ -71,17 +72,17 @@ export const SettingsPage: React.FC = () => {
         api.getUpcomingRenewals(),
       ]);
       setTags(tagsData);
-      setNotifyEnabled(notifySettings.enabled);
-      setNotifyDays(notifySettings.daysBeforeList);
       setWebhookEnabled(!!notifySettings.webhookEnabled);
       setWebhookUrl(notifySettings.webhookUrl || '');
       setWebhookPlatform(notifySettings.webhookPlatform || 'auto');
       setWebhookDays(notifySettings.webhookDaysBefore || '1,2,3');
+      setWebhookSecret(notifySettings.webhookSecret || '');
+      setCalendarToken(notifySettings.calendarToken || '');
       setUpcoming(upcomingData);
     } catch (err) {
       console.error('加载设置失败:', err);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
@@ -126,13 +127,15 @@ export const SettingsPage: React.FC = () => {
   const handleSaveNotifySettings = async () => {
     try {
       await api.saveNotificationSettings({
-        enabled: notifyEnabled,
-        daysBeforeList: notifyDays,
+        enabled: webhookEnabled,
+        daysBeforeList: webhookDays,
         webhookEnabled,
         webhookUrl,
         webhookPlatform,
         webhookDaysBefore: webhookDays,
+        webhookSecret,
       });
+      await loadData(true);
       setWebhookOk(true);
       setWebhookMessage('设置已保存');
     } catch (err: any) {
@@ -150,7 +153,7 @@ export const SettingsPage: React.FC = () => {
     setWebhookBusy(true);
     setWebhookMessage('');
     try {
-      const result = await api.testWebhook({ webhookUrl, webhookPlatform });
+      const result = await api.testWebhook({ webhookUrl, webhookPlatform, webhookSecret });
       setWebhookOk(true);
       setWebhookMessage(result.message || '测试消息已发送，请查看群聊');
     } catch (err: any) {
@@ -184,12 +187,13 @@ export const SettingsPage: React.FC = () => {
     setTotpError('');
     setTotpMessage('');
     try {
-      await api.verifyTotp(totpCode);
+      const result = await api.verifyTotp(totpCode);
       setTotpVerified(true);
       setTotpCode('');
       setTotpUri('');
       setTotpSecret('');
-      setTotpMessage('两步验证已成功启用');
+      setRecoveryCodes(result.recoveryCodes || []);
+      setTotpMessage(result.recoveryCodes?.length ? '两步验证已启用，请立刻保存恢复码' : '两步验证已成功启用');
     } catch (err: any) {
       setTotpError(err.message || '验证失败');
     } finally {
@@ -208,6 +212,7 @@ export const SettingsPage: React.FC = () => {
       setTotpVerified(false);
       setTotpUri('');
       setTotpSecret('');
+      setRecoveryCodes([]);
       setTotpMessage('两步验证已禁用');
     } catch (err: any) {
       setTotpError(err.message || '禁用失败');
@@ -332,49 +337,8 @@ export const SettingsPage: React.FC = () => {
         {/* 通知设置 */}
         {activeSection === 'notifications' && (
           <div className="space-y-4">
-            {/* 通知开关 */}
             <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <h3 className="text-sm font-semibold text-slate-700 mb-4">提醒设置</h3>
-              <div className="space-y-4">
-                <label className="flex items-center justify-between cursor-pointer">
-                  <span className="text-sm text-slate-600">启用到期提醒</span>
-                  <div
-                    onClick={() => setNotifyEnabled(!notifyEnabled)}
-                    className={`w-11 h-6 rounded-full transition-colors cursor-pointer ${
-                      notifyEnabled ? 'bg-blue-600' : 'bg-slate-200'
-                    }`}
-                  >
-                    <div
-                      className={`w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5 ${
-                        notifyEnabled ? 'translate-x-5 ml-0.5' : 'translate-x-0.5'
-                      }`}
-                    />
-                  </div>
-                </label>
-
-                <div>
-                  <label className="text-sm text-slate-600 block mb-2">提前提醒天数（逗号分隔）</label>
-                  <input
-                    type="text"
-                    value={notifyDays}
-                    onChange={e => setNotifyDays(e.target.value)}
-                    placeholder="1,3,7"
-                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
-                  />
-                  <p className="text-xs text-slate-400 mt-1">例如：1,3,7 表示提前1天、3天、7天提醒</p>
-                </div>
-
-                <button
-                  onClick={handleSaveNotifySettings}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors"
-                >
-                  保存设置
-                </button>
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <h3 className="text-sm font-semibold text-slate-700 mb-1">外部 Webhook</h3>
+              <h3 className="text-sm font-semibold text-slate-700 mb-1">到期提醒</h3>
               <p className="text-xs text-slate-400 mb-4">到期前按设定天数每天推送一次，支持飞书、企业微信、钉钉机器人</p>
               <div className="space-y-4">
                 <label
@@ -433,7 +397,54 @@ export const SettingsPage: React.FC = () => {
                     placeholder="1,2,3"
                     className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
                   />
-                  <p className="text-xs text-slate-400 mt-1">默认 1,2,3：到期前 3 天每天提醒一次。飞书自定义机器人请关闭签名校验。</p>
+                  <p className="text-xs text-slate-400 mt-1">默认 1,2,3：到期前 3 天每天提醒一次。填写签名密钥后可开启飞书签名校验。</p>
+                </div>
+
+                <div>
+                  <label className="text-sm text-slate-600 block mb-2">飞书签名密钥（可选）</label>
+                  <input
+                    value={webhookSecret}
+                    onChange={e => setWebhookSecret(e.target.value)}
+                    placeholder="自定义机器人签名 secret"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-slate-600 block mb-2">日历订阅</label>
+                  <p className="text-xs text-slate-400 mb-2">复制到 Google / Apple 日历，即可看到续费日。</p>
+                  <div className="flex gap-2">
+                    <input
+                      readOnly
+                      value={calendarToken ? `${window.location.origin}/api/v1/calendar/${calendarToken}` : '保存设置后生成'}
+                      className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-xs outline-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        if (!calendarToken) return;
+                        await navigator.clipboard.writeText(`${window.location.origin}/api/v1/calendar/${calendarToken}`);
+                        setWebhookOk(true);
+                        setWebhookMessage('日历链接已复制');
+                      }}
+                      disabled={!calendarToken}
+                      className="px-3 py-2 text-xs border border-slate-200 rounded-lg disabled:opacity-40"
+                    >
+                      复制
+                    </button>
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const data = await api.rotateCalendarToken();
+                        setCalendarToken(data.calendarToken);
+                        setWebhookOk(true);
+                        setWebhookMessage('日历链接已更新，请重新订阅');
+                      }}
+                      className="px-3 py-2 text-xs border border-slate-200 rounded-lg"
+                    >
+                      重置
+                    </button>
+                  </div>
                 </div>
 
                 {webhookMessage && (
@@ -447,7 +458,7 @@ export const SettingsPage: React.FC = () => {
                     onClick={handleSaveNotifySettings}
                     className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors"
                   >
-                    保存 Webhook
+                    保存设置
                   </button>
                   <button
                     type="button"
@@ -629,8 +640,28 @@ export const SettingsPage: React.FC = () => {
               {totpEnabled && totpVerified && (
                 <div>
                   <p className="text-sm text-slate-500 mb-4">
-                    两步验证已启用。每次登录时除了主密钥，还需要输入身份验证器中的验证码。
+                    两步验证已启用。每次登录时除了主密钥，还需要输入身份验证器中的验证码，或一次性恢复码。
                   </p>
+                  {recoveryCodes.length > 0 && (
+                    <div className="mb-4 p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                      <p className="text-sm font-medium text-amber-800 mb-2">请立刻保存这些一次性恢复码。关闭页面后将无法再查看，每个码只能用一次。</p>
+                      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2 font-mono text-sm mb-3">
+                        {recoveryCodes.map(code => (
+                          <li key={code} className="bg-white px-3 py-2 rounded-lg text-slate-800">{code}</li>
+                        ))}
+                      </ul>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          await navigator.clipboard.writeText(recoveryCodes.join('\n'));
+                          setTotpMessage('恢复码已复制，请存到安全的地方');
+                        }}
+                        className="text-sm text-amber-800 underline"
+                      >
+                        复制全部恢复码
+                      </button>
+                    </div>
+                  )}
                   <button
                     onClick={handleDisableTotp}
                     disabled={totpLoading}
@@ -656,7 +687,7 @@ export const SettingsPage: React.FC = () => {
                 </li>
                 <li className="flex items-start space-x-2">
                   <span className="text-blue-500 mt-0.5">&#8226;</span>
-                  <span>如需禁用两步验证，请在此页面操作；丢失验证器将无法登录</span>
+                  <span>如需禁用两步验证，请在此页面操作；丢失验证器时可用一次性恢复码登录</span>
                 </li>
                 <li className="flex items-start space-x-2">
                   <span className="text-amber-500 mt-0.5">&#8226;</span>

@@ -12,7 +12,7 @@ func TestDetectPlatform(t *testing.T) {
 }
 
 func TestBuildPayloadFeishu(t *testing.T) {
-	body, err := BuildPayload(PlatformFeishu, "hello")
+	body, err := BuildPayload(PlatformFeishu, "hello", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -38,6 +38,16 @@ func TestCheckPlatformError(t *testing.T) {
 	}
 	if err := checkPlatformError(PlatformWeCom, []byte(`{"errcode":93000,"errmsg":"invalid webhook url"}`)); err == nil {
 		t.Fatal("企业微信业务错误应失败")
+	}
+}
+
+func TestBuildPayloadFeishuSign(t *testing.T) {
+	body, err := BuildPayload(PlatformFeishu, "hello", "secret")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !containsAll(string(body), `"timestamp":`, `"sign":`) {
+		t.Fatalf("填写密钥后应带签名: %s", body)
 	}
 }
 

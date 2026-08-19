@@ -26,6 +26,7 @@ const defaultSub: Partial<Subscription> = {
   startDate: new Date().toISOString().split('T')[0],
   category: '',
   autoRotate: false,
+  status: 'active',
 };
 
 export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
@@ -260,6 +261,65 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </div>
             </label>
           )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">状态</label>
+              <select
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-slate-800 outline-none font-bold text-[12px]"
+                value={formData.status || 'active'}
+                onChange={e => setFormData({ ...formData, status: e.target.value as Subscription['status'] })}
+              >
+                <option value="active">生效中</option>
+                <option value="trial">试用</option>
+                <option value="paused">已暂停</option>
+                <option value="canceled">已取消</option>
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">单独提醒天数</label>
+              <input
+                className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-slate-800 outline-none font-bold text-sm"
+                placeholder="留空用全局"
+                value={formData.reminderDays || ''}
+                onChange={e => setFormData({ ...formData, reminderDays: e.target.value })}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">试用结束</label>
+              <input type="date" className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-slate-800 outline-none font-bold text-sm"
+                value={formData.trialEndsOn || ''} onChange={e => setFormData({ ...formData, trialEndsOn: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">优惠结束</label>
+              <input type="date" className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-slate-800 outline-none font-bold text-sm"
+                value={formData.promoEndsOn || ''} onChange={e => setFormData({ ...formData, promoEndsOn: e.target.value })} />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">付款方式</label>
+              <input className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-slate-800 outline-none font-bold text-sm"
+                placeholder="招行 / PayPal"
+                value={formData.paymentMethod || ''} onChange={e => setFormData({ ...formData, paymentMethod: e.target.value })} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">卡号后四位</label>
+              <input className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3 text-slate-800 outline-none font-bold text-sm"
+                maxLength={4} value={formData.cardLast4 || ''} onChange={e => setFormData({ ...formData, cardLast4: e.target.value.replace(/\D/g, '').slice(0, 4) })} />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">取消页面</label>
+            <input type="url" className="w-full bg-slate-50 border border-slate-100 rounded-xl p-3.5 text-slate-800 outline-none font-medium text-sm"
+              placeholder="https://..."
+              value={formData.cancelUrl || ''} onChange={e => setFormData({ ...formData, cancelUrl: e.target.value })} />
+          </div>
 
           <div className="space-y-1.5">
             <label htmlFor="sub-credential" className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">关联凭证 (可选)</label>

@@ -94,6 +94,7 @@ func (h *VaultHandler) CreateSubscription(c *gin.Context) {
 	}
 
 	sub.VaultID = vaultID
+	sub.NormalizeStatus()
 
 	if err := database.DB.Create(&sub).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "创建订阅失败"})
@@ -119,22 +120,44 @@ func (h *VaultHandler) UpdateSubscription(c *gin.Context) {
 		return
 	}
 
+	oldCost := sub.Cost
+	oldCurrency := sub.Currency
+	updateData.NormalizeStatus()
+
 	if err := database.DB.Model(&sub).Updates(map[string]interface{}{
-		"name":             updateData.Name,
-		"cost":             updateData.Cost,
-		"currency":         updateData.Currency,
-		"frequency_amount": updateData.FrequencyAmount,
-		"frequency_unit":   updateData.FrequencyUnit,
-		"renewal_date":     updateData.RenewalDate,
-		"start_date":       updateData.StartDate,
-		"category":         updateData.Category,
-		"credential_id":    updateData.CredentialID,
-		"website":          updateData.Website,
-		"active":           updateData.Active,
-		"auto_rotate":      updateData.AutoRotate,
+		"name":              updateData.Name,
+		"cost":              updateData.Cost,
+		"currency":          updateData.Currency,
+		"frequency_amount":  updateData.FrequencyAmount,
+		"frequency_unit":    updateData.FrequencyUnit,
+		"renewal_date":      updateData.RenewalDate,
+		"start_date":        updateData.StartDate,
+		"category":          updateData.Category,
+		"credential_id":     updateData.CredentialID,
+		"website":           updateData.Website,
+		"active":            updateData.Active,
+		"auto_rotate":       updateData.AutoRotate,
+		"status":            updateData.Status,
+		"payment_method":    updateData.PaymentMethod,
+		"card_last4":        updateData.CardLast4,
+		"cancel_url":        updateData.CancelURL,
+		"trial_ends_on":     updateData.TrialEndsOn,
+		"promo_ends_on":     updateData.PromoEndsOn,
+		"reminder_days":     updateData.ReminderDays,
+		"notes":             updateData.Notes,
 	}).Error; err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新订阅失败"})
 		return
+	}
+
+	if updateData.Cost != oldCost || updateData.Currency != oldCurrency {
+		database.DB.Create(&models.PriceHistory{
+			VaultID:        vaultID,
+			SubscriptionID: subID,
+			OldCost:        oldCost,
+			NewCost:        updateData.Cost,
+			Currency:       updateData.Currency,
+		})
 	}
 
 	database.DB.Where("id = ? AND vault_id = ?", subID, vaultID).First(&sub)

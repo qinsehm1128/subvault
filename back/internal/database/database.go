@@ -28,7 +28,7 @@ func Init(dbPath string) error {
 	}
 
 	// 自动迁移
-	return DB.AutoMigrate(
+	if err := DB.AutoMigrate(
 		&models.Vault{},
 		&models.Credential{},
 		&models.Subscription{},
@@ -40,7 +40,17 @@ func Init(dbPath string) error {
 		&models.AIReport{},
 		&models.Memo{},
 		&models.TotpSetting{},
-	)
+		&models.PriceHistory{},
+		&models.RenewalEvent{},
+		&models.TotpRecoveryCode{},
+	); err != nil {
+		return err
+	}
+
+	// 旧库 unique 不含 kind，重建以免试用/优惠提醒与续费提醒互相挡住
+	_ = DB.Exec("DROP INDEX IF EXISTS idx_webhook_delivery").Error
+	_ = DB.Exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_webhook_delivery ON webhook_deliveries (vault_id, subscription_id, days_left, sent_date, kind)").Error
+	return nil
 }
 
 func GetDB() *gorm.DB {

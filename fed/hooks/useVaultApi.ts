@@ -44,8 +44,16 @@ export const useVaultApi = () => {
       category: newSub.category || '生活',
       credentialId: newSub.credentialId || null,
       website: newSub.website || '',
-      active: true,
       autoRotate: !!newSub.autoRotate,
+      status: newSub.status || 'active',
+      paymentMethod: newSub.paymentMethod || '',
+      cardLast4: newSub.cardLast4 || '',
+      cancelUrl: newSub.cancelUrl || '',
+      trialEndsOn: newSub.trialEndsOn || '',
+      promoEndsOn: newSub.promoEndsOn || '',
+      reminderDays: newSub.reminderDays || '',
+      notes: newSub.notes || '',
+      active: (newSub.status || 'active') !== 'paused' && (newSub.status || 'active') !== 'canceled',
     };
 
     try {
@@ -79,8 +87,16 @@ export const useVaultApi = () => {
       category: updates.category || '生活',
       credentialId: updates.credentialId || null,
       website: updates.website || '',
-      active: updates.active !== false,
       autoRotate: !!updates.autoRotate,
+      status: updates.status || 'active',
+      paymentMethod: updates.paymentMethod || '',
+      cardLast4: updates.cardLast4 || '',
+      cancelUrl: updates.cancelUrl || '',
+      trialEndsOn: updates.trialEndsOn || '',
+      promoEndsOn: updates.promoEndsOn || '',
+      reminderDays: updates.reminderDays || '',
+      notes: updates.notes || '',
+      active: (updates.status || 'active') !== 'paused' && (updates.status || 'active') !== 'canceled',
     };
 
     try {
@@ -223,7 +239,8 @@ export const useVaultApi = () => {
   };
 
   const importVaultData = async (data: Partial<VaultData>) => {
-    const results = { subscriptions: 0, credentials: 0, memos: 0 };
+    const results = { subscriptions: 0, credentials: 0, memos: 0, failed: 0 };
+    const failures: string[] = [];
     const newSubscriptions: Subscription[] = [];
     const newCredentials: Credential[] = [];
     const newMemos: Memo[] = [];
@@ -240,12 +257,18 @@ export const useVaultApi = () => {
             startDate: sub.startDate || new Date().toISOString().split('T')[0],
             renewalDate: sub.renewalDate || calculateNextRenewal(sub.startDate || new Date().toISOString().split('T')[0], sub.frequencyAmount || 1, sub.frequencyUnit || 'MONTHS'),
             category: sub.category || '生活',
+            autoRotate: !!sub.autoRotate,
+            status: sub.status || (sub.active === false ? 'paused' : 'active'),
+            paymentMethod: sub.paymentMethod || '',
             website: sub.website || '',
             active: sub.active !== false,
           });
           newSubscriptions.push(created);
           results.subscriptions++;
-        } catch { /* skip duplicates */ }
+        } catch (err: any) {
+          results.failed++;
+          failures.push(sub.name || '未命名订阅');
+        }
       }
     }
 
@@ -262,7 +285,10 @@ export const useVaultApi = () => {
           });
           newCredentials.push(created);
           results.credentials++;
-        } catch { /* skip duplicates */ }
+        } catch {
+          results.failed++;
+          failures.push(cred.label || '未命名凭证');
+        }
       }
     }
 
@@ -277,7 +303,10 @@ export const useVaultApi = () => {
           });
           newMemos.push(created);
           results.memos++;
-        } catch { /* skip duplicates */ }
+        } catch {
+          results.failed++;
+          failures.push(memo.title || '未命名备忘');
+        }
       }
     }
 
@@ -289,7 +318,7 @@ export const useVaultApi = () => {
       lastUpdated: Date.now(),
     } : null);
 
-    return results;
+    return { ...results, failures };
   };
 
   const deleteCredential = async (id: string) => {

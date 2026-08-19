@@ -267,7 +267,7 @@ class ApiService {
   }
 
   async verifyTotp(code: string) {
-    return this.request<{ message: string }>('/totp/verify', {
+    return this.request<{ message: string; recoveryCodes?: string[] }>('/totp/verify', {
       method: 'POST',
       body: JSON.stringify({ code }),
     });
@@ -322,6 +322,9 @@ class ApiService {
       webhookUrl: string;
       webhookPlatform: string;
       webhookDaysBefore: string;
+      webhookSecret?: string;
+      calendarToken?: string;
+      baseCurrency?: string;
     }>('/notifications/settings');
   }
 
@@ -332,6 +335,8 @@ class ApiService {
     webhookUrl: string;
     webhookPlatform: string;
     webhookDaysBefore: string;
+    webhookSecret?: string;
+    baseCurrency?: string;
   }) {
     return this.request<{ message: string }>('/notifications/settings', {
       method: 'POST',
@@ -339,7 +344,7 @@ class ApiService {
     });
   }
 
-  async testWebhook(data: { webhookUrl: string; webhookPlatform: string }) {
+  async testWebhook(data: { webhookUrl: string; webhookPlatform: string; webhookSecret?: string }) {
     return this.request<{ message: string }>('/notifications/webhook/test', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -368,6 +373,14 @@ class ApiService {
       subscriptionCount: number;
       upcomingCount: number;
     }>('/analytics');
+  }
+
+  async getInsights() {
+    return this.request<{ insights: { kind: string; title: string; detail: string; subscriptionId?: string; subscriptionName?: string }[] }>('/insights');
+  }
+
+  async rotateCalendarToken() {
+    return this.request<{ calendarToken: string }>('/notifications/calendar-token', { method: 'POST' });
   }
 }
 

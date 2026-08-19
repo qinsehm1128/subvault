@@ -2,6 +2,7 @@ import React from 'react';
 import { Subscription, Credential } from '../types';
 import { TrashIcon, KeyIcon, EditIcon, RefreshIcon } from './Icons';
 import { getDaysRemaining, getCycleProgress, formatCurrency, formatFrequency } from '../utils/subscription';
+import { logoUrl } from '../utils/logo';
 
 interface SubscriptionCardProps {
   subscription: Subscription;
@@ -9,6 +10,7 @@ interface SubscriptionCardProps {
   onEdit: () => void;
   onDelete: () => void;
   onRefresh?: () => void;
+  onOpenCredential?: () => void;
 }
 
 export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
@@ -17,21 +19,33 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   onEdit,
   onDelete,
   onRefresh,
+  onOpenCredential,
 }) => {
   const daysLeft = getDaysRemaining(sub.renewalDate);
   const progress = getCycleProgress(sub.startDate, sub.renewalDate);
+  const status = sub.status || (sub.active === false ? 'paused' : 'active');
+  const icon = logoUrl(sub.website);
 
-  // 状态颜色
   let statusText = 'text-emerald-600';
   let progressColor = 'bg-emerald-500';
 
-  if (daysLeft <= 3) {
+  if (status === 'paused' || status === 'canceled') {
+    statusText = 'text-slate-400';
+    progressColor = 'bg-slate-300';
+  } else if (daysLeft <= 3) {
     statusText = 'text-rose-600';
     progressColor = 'bg-rose-500';
   } else if (daysLeft <= 7) {
     statusText = 'text-amber-600';
     progressColor = 'bg-amber-500';
   }
+
+  const statusLabel: Record<string, string> = {
+    active: '生效',
+    trial: '试用',
+    paused: '暂停',
+    canceled: '已取消',
+  };
 
   return (
     <div
@@ -45,8 +59,10 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
         {/* 头部 */}
         <div className="flex justify-between items-start mb-4">
           <div className="flex items-center space-x-3">
-            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-sm">
-              {sub.name.slice(0, 2).toUpperCase()}
+            <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white text-sm font-bold shadow-sm overflow-hidden">
+              {icon ? (
+                <img src={icon} alt="" className="w-full h-full object-cover bg-white" onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
+              ) : sub.name.slice(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0">
               <h3 className="font-semibold text-slate-900 text-[15px] truncate leading-tight">{sub.name}</h3>
@@ -54,6 +70,11 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
                 <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-500">
                   {sub.category}
                 </span>
+                {status !== 'active' && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-500">
+                    {statusLabel[status] || status}
+                  </span>
+                )}
                 {sub.autoRotate && sub.frequencyUnit !== 'PERMANENT' && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-600">
                     自动轮转
@@ -138,16 +159,33 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           {/* 底部信息 */}
           <div className="flex justify-between items-center pt-3 border-t border-slate-100">
             {linkedCredential ? (
-              <div className="flex items-center space-x-1.5 text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg">
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); onOpenCredential?.(); }}
+                className="flex items-center space-x-1.5 text-blue-600 bg-blue-50 px-2.5 py-1 rounded-lg"
+              >
                 <KeyIcon className="w-3.5 h-3.5" />
                 <span className="text-xs font-medium truncate max-w-[100px]">{linkedCredential.label}</span>
-              </div>
+              </button>
             ) : (
               <span className="text-xs text-slate-400">未关联凭证</span>
             )}
-            <span className="text-xs text-slate-400 font-medium tabular-nums">
-              {sub.frequencyUnit !== 'PERMANENT' ? sub.renewalDate : '—'}
-            </span>
+            <div className="flex items-center gap-2">
+              {sub.cancelUrl && (
+                <a
+                  href={sub.cancelUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="text-[10px] text-rose-500 font-medium"
+                >
+                  取消
+                </a>
+              )}
+              <span className="text-xs text-slate-400 font-medium tabular-nums">
+                {sub.frequencyUnit !== 'PERMANENT' ? sub.renewalDate : '—'}
+              </span>
+            </div>
           </div>
         </div>
       </div>

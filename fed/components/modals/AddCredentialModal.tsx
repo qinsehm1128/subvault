@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Credential, CREDENTIAL_CATEGORIES } from '../../types';
+import { generatePassword } from '../../utils/password';
 import { ModalOverlay } from './ModalOverlay';
 
 interface AddCredentialModalProps {
@@ -70,14 +71,23 @@ export const AddCredentialModal: React.FC<AddCredentialModalProps> = ({
           </div>
           <div className="space-y-1.5">
             <label htmlFor="cred-password" className="text-xs font-medium text-slate-500">密码</label>
+            <div className="flex gap-2">
             <input
               id="cred-password"
-              type="password"
+              type="text"
               placeholder="通行密码"
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-slate-800 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none font-bold text-sm transition-colors duration-200"
+              className="flex-1 bg-slate-50 border border-slate-100 rounded-xl p-4 text-slate-800 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none font-bold text-sm transition-colors duration-200"
               value={newCred.password || ''}
               onChange={e => setNewCred({...newCred, password: e.target.value})}
             />
+            <button
+              type="button"
+              onClick={() => setNewCred({ ...newCred, password: generatePassword() })}
+              className="px-3 py-2 text-xs font-medium text-emerald-700 bg-emerald-50 rounded-xl whitespace-nowrap"
+            >
+              生成
+            </button>
+            </div>
           </div>
           <div className="space-y-1.5">
             <label htmlFor="cred-website" className="text-xs font-medium text-slate-500">网站地址</label>

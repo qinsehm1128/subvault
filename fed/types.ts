@@ -15,20 +15,30 @@ export const CREDENTIAL_CATEGORIES: CredentialCategory[] = ['社交', '购物', 
 
 export type FrequencyUnit = 'DAYS' | 'WEEKS' | 'MONTHS' | 'YEARS' | 'PERMANENT';
 
+export type SubscriptionStatus = 'active' | 'trial' | 'paused' | 'canceled';
+
 export interface Subscription {
   id: string;
   name: string;
   cost: number;
   currency: string;
-  frequencyAmount: number; // e.g., 3
-  frequencyUnit: FrequencyUnit; // e.g., 'MONTHS'
-  renewalDate: string; // YYYY-MM-DD (This becomes the "Next Renewal Date")
-  startDate: string;   // YYYY-MM-DD (The original start/last payment date)
+  frequencyAmount: number;
+  frequencyUnit: FrequencyUnit;
+  renewalDate: string;
+  startDate: string;
   category: string;
   credentialId?: string;
   website?: string;
   active: boolean;
   autoRotate?: boolean;
+  status?: SubscriptionStatus;
+  paymentMethod?: string;
+  cardLast4?: string;
+  cancelUrl?: string;
+  trialEndsOn?: string;
+  promoEndsOn?: string;
+  reminderDays?: string;
+  notes?: string;
 }
 
 export interface Memo {

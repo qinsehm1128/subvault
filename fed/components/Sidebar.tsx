@@ -1,5 +1,6 @@
 import React from 'react';
 import { UnlockIcon, CreditCardIcon, KeyIcon, BrainIcon, ChartIcon, SettingsIcon, DownloadIcon, UploadIcon, LockIcon, MemoIcon } from './Icons';
+import { toggleTheme } from '../utils/theme';
 
 interface SidebarItemProps {
   active: boolean;
@@ -154,6 +155,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
         >
           <LockIcon className="w-4 h-4" />
           <span>锁定</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => toggleTheme()}
+          className="w-full flex items-center space-x-3 px-3 py-2 text-xs font-medium text-slate-400 hover:text-slate-600 hover:bg-slate-50 rounded-lg transition-colors duration-200 cursor-pointer"
+        >
+          <span>切换深色模式</span>
         </button>
       </div>
     </aside>

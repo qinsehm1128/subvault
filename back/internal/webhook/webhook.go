@@ -2,6 +2,9 @@ package webhook
 
 import (
 	"bytes"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -85,14 +88,24 @@ func BuildTestText() string {
 	return "【SubVault 测试提醒】\n这是一条测试消息。如果能看到它，说明 Webhook 已接通，到期前会按设定天数提醒。"
 }
 
-func BuildPayload(platform Platform, text string) ([]byte, error) {
+func BuildPayload(platform Platform, text, secret string) ([]byte, error) {
 	var body any
 	switch platform {
 	case PlatformFeishu:
-		body = map[string]any{
+		payload := map[string]any{
 			"msg_type": "text",
 			"content":  map[string]string{"text": text},
 		}
+		if strings.TrimSpace(secret) != "" {
+			ts := fmt.Sprintf("%d", time.Now().Unix())
+			sign, err := feishuSign(secret, ts)
+			if err != nil {
+				return nil, err
+			}
+			payload["timestamp"] = ts
+			payload["sign"] = sign
+		}
+		body = payload
 	case PlatformWeCom, PlatformDingTalk:
 		body = map[string]any{
 			"msgtype": "text",
@@ -107,12 +120,19 @@ func BuildPayload(platform Platform, text string) ([]byte, error) {
 	return json.Marshal(body)
 }
 
-func Send(rawURL, platform, text string) error {
+func feishuSign(secret, timestamp string) (string, error) {
+	stringToSign := timestamp + "\n" + secret
+	mac := hmac.New(sha256.New, []byte(stringToSign))
+	sum := mac.Sum(nil)
+	return base64.StdEncoding.EncodeToString(sum), nil
+}
+
+func Send(rawURL, platform, text, secret string) error {
 	if err := ValidateURL(rawURL); err != nil {
 		return err
 	}
 	platformKind := DetectPlatform(rawURL, platform)
-	payload, err := BuildPayload(platformKind, text)
+	payload, err := BuildPayload(platformKind, text, secret)
 	if err != nil {
 		return err
 	}

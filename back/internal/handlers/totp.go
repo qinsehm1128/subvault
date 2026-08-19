@@ -7,6 +7,7 @@ import (
 	"subvault/internal/crypto"
 	"subvault/internal/database"
 	"subvault/internal/models"
+	"subvault/internal/recovery"
 
 	"github.com/gin-gonic/gin"
 	"github.com/pquerna/otp/totp"
@@ -106,8 +107,12 @@ func (h *TotpHandler) VerifyTOTP(c *gin.Context) {
 
 	// 标记为已验证
 	database.DB.Model(&setting).Update("verified", true)
-
-	c.JSON(http.StatusOK, gin.H{"message": "两步验证已启用"})
+	codes, err := recovery.Generate(database.DB, vaultID, 8)
+	if err != nil {
+		c.JSON(http.StatusOK, gin.H{"message": "两步验证已启用"})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "两步验证已启用", "recoveryCodes": codes})
 }
 
 // DisableTOTP 禁用两步验证
@@ -119,7 +124,7 @@ func (h *TotpHandler) DisableTOTP(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": "未找到两步验证设置"})
 		return
 	}
-
+	database.DB.Where("vault_id = ?", vaultID).Delete(&models.TotpRecoveryCode{})
 	c.JSON(http.StatusOK, gin.H{"message": "两步验证已禁用"})
 }
 

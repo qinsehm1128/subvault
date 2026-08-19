@@ -60,20 +60,20 @@ export const LoginPage: React.FC<LoginPageProps> = ({
           {totpRequired ? (
             <div className="space-y-1.5">
               <p className="text-sm text-slate-500 text-center mb-4">
-                请输入身份验证器中的6位验证码
+                请输入身份验证器中的6位验证码，或一次性恢复码
               </p>
               <label htmlFor="totp-code" className="sr-only">验证码</label>
               <input
                 id="totp-code"
                 type="text"
-                inputMode="numeric"
+                inputMode="text"
                 autoComplete="one-time-code"
                 value={totpCode}
-                onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                placeholder="000000"
-                className="w-full bg-slate-50 border border-slate-100 text-slate-800 px-5 py-4 rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-colors duration-200 placeholder:text-slate-300 text-center text-2xl font-mono tracking-[0.3em] sm:tracking-[0.5em]"
+                onChange={(e) => setTotpCode(e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 9))}
+                placeholder="000000 或恢复码"
+                className="w-full bg-slate-50 border border-slate-100 text-slate-800 px-5 py-4 rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-colors duration-200 placeholder:text-slate-300 text-center text-xl font-mono tracking-[0.2em]"
                 autoFocus
-                maxLength={6}
+                maxLength={9}
                 aria-describedby={error ? "error-message" : undefined}
               />
             </div>
@@ -101,7 +101,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
 
           <button
             type="submit"
-            disabled={isLoading || (totpRequired ? totpCode.length !== 6 : !masterKey)}
+            disabled={isLoading || (totpRequired ? totpCode.length < 6 : !masterKey)}
             className="w-full bg-slate-900 hover:bg-black text-white font-bold py-4 rounded-2xl transition-colors duration-200 shadow-md active:scale-95 text-sm cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading ? '验证中...' : totpRequired ? '验证' : '进入空间'}

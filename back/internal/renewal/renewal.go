@@ -92,6 +92,14 @@ func RotateAndSave(db *gorm.DB, subscriptions []models.Subscription, today time.
 			"start_date":   subscriptions[i].StartDate,
 			"renewal_date": subscriptions[i].RenewalDate,
 		})
+		_ = db.Create(&models.RenewalEvent{
+			VaultID:        subscriptions[i].VaultID,
+			SubscriptionID: subscriptions[i].ID,
+			Amount:         subscriptions[i].Cost,
+			Currency:       subscriptions[i].Currency,
+			OccurredOn:     subscriptions[i].StartDate,
+			Source:         "rotate",
+		}).Error
 	}
 	return subscriptions
 }
