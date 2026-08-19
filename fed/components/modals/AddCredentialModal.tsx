@@ -38,13 +38,13 @@ export const AddCredentialModal: React.FC<AddCredentialModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/10 backdrop-blur-md p-4 animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="add-cred-title">
-      <div className="bg-white shadow-xl rounded-[2rem] w-full max-w-[480px] overflow-hidden animate-slide-up border border-slate-100">
-        <div className="p-7 border-b border-slate-50 flex justify-between items-center">
+    <div className="modal-overlay animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="add-cred-title">
+      <div className="modal-sheet max-w-[480px] md:animate-slide-up">
+        <div className="p-5 md:p-7 border-b border-slate-50 flex justify-between items-center flex-shrink-0">
           <h3 id="add-cred-title" className="text-lg font-bold text-slate-800 tracking-tight">添加安全凭证</h3>
           <button onClick={handleClose} className="text-slate-300 hover:text-slate-500 text-2xl cursor-pointer transition-colors duration-200" aria-label="关闭弹窗">&times;</button>
         </div>
-        <div className="p-7 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className="p-5 md:p-7 space-y-4 overflow-y-auto page-scroll flex-1 min-h-0">
           <div className="space-y-1.5">
             <label htmlFor="cred-label" className="text-xs font-medium text-slate-500">服务名称 *</label>
             <input
@@ -114,12 +114,12 @@ export const AddCredentialModal: React.FC<AddCredentialModalProps> = ({
             />
           </div>
         </div>
-        <div className="p-7 border-t border-slate-50 flex justify-end space-x-3 bg-slate-50/20">
-          <button onClick={handleClose} className="px-5 py-2.5 text-[12px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest cursor-pointer transition-colors duration-200">取消</button>
+        <div className="p-5 md:p-7 border-t border-slate-50 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:space-x-3 bg-slate-50/20 flex-shrink-0">
+          <button onClick={handleClose} className="px-5 py-2.5 text-[12px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest cursor-pointer transition-colors duration-200 min-h-[44px]">取消</button>
           <button
             onClick={handleSubmit}
             disabled={!newCred.label || !newCred.username}
-            className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold rounded-xl text-[12px] uppercase tracking-widest cursor-pointer disabled:cursor-not-allowed transition-colors duration-200"
+            className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold rounded-xl text-[12px] uppercase tracking-widest cursor-pointer disabled:cursor-not-allowed transition-colors duration-200 min-h-[44px]"
           >
             确认录入
           </button>

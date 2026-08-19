@@ -112,18 +112,18 @@ export const MemoPage: React.FC<MemoPageProps> = ({
   const categoryOptions = ['全部', ...MEMO_CATEGORIES];
 
   return (
-    <main className="flex-1 overflow-y-auto px-8 py-8">
+    <main className="flex-1 overflow-y-auto page-scroll px-4 py-5 md:px-8 md:py-8">
       <div className="mx-auto">
-        <div className="space-y-6">
+        <div className="space-y-5 md:space-y-6">
           {/* Header */}
-          <div className="flex justify-between items-end">
-            <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-end">
+            <div className="hidden md:block">
               <h2 className="text-2xl font-bold text-slate-900">备忘录</h2>
               <p className="text-slate-400 text-sm mt-1">安全存储您的重要信息</p>
             </div>
             <button 
               onClick={handleAddMemo} 
-              className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl transition-colors duration-200 shadow-sm font-medium text-sm cursor-pointer"
+              className="w-full sm:w-auto flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl transition-colors duration-200 shadow-sm font-medium text-sm cursor-pointer min-h-[44px]"
             >
               <PlusIcon className="w-4 h-4" />
               <span>新建备忘录</span>
@@ -244,12 +244,12 @@ export const MemoPage: React.FC<MemoPageProps> = ({
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/10 backdrop-blur-md p-4 animate-fade-in"
+          className="modal-overlay animate-fade-in"
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-confirm-title"
         >
-          <div className="bg-white shadow-xl rounded-2xl w-full max-w-[400px] overflow-hidden animate-slide-up border border-slate-100">
+          <div className="modal-sheet max-w-[400px] md:animate-slide-up">
             <div className="p-6">
               <h3 id="delete-confirm-title" className="text-lg font-bold text-slate-800 mb-2">
                 确认删除
@@ -258,16 +258,16 @@ export const MemoPage: React.FC<MemoPageProps> = ({
                 确定要删除这个备忘录吗？此操作无法撤销。
               </p>
             </div>
-            <div className="px-6 pb-6 flex justify-end space-x-3">
+            <div className="px-6 pb-6 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:space-x-3">
               <button 
                 onClick={() => setShowDeleteConfirm(null)} 
-                className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 cursor-pointer transition-colors duration-200"
+                className="px-4 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-700 cursor-pointer transition-colors duration-200 min-h-[44px]"
               >
                 取消
               </button>
               <button 
                 onClick={() => handleDeleteMemo(showDeleteConfirm)} 
-                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-xl text-sm cursor-pointer transition-colors duration-200"
+                className="px-4 py-2.5 bg-rose-600 hover:bg-rose-700 text-white font-medium rounded-xl text-sm cursor-pointer transition-colors duration-200 min-h-[44px]"
               >
                 删除
               </button>

@@ -188,26 +188,26 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
         return <MemoPage />;
       default:
         return (
-          <main className="flex-1 overflow-y-auto px-8 py-8">
+          <main className="flex-1 overflow-y-auto page-scroll px-4 py-5 md:px-8 md:py-8">
             <div className="mx-auto">
               {activeTab === 'subscriptions' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-end">
-                    <div>
+                <div className="space-y-5 md:space-y-6">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:justify-between sm:items-end">
+                    <div className="hidden md:block">
                       <h2 className="text-2xl font-bold text-slate-900">订阅总览</h2>
                       <p className="text-slate-400 text-sm mt-1">追踪并优化您的订阅支出</p>
                     </div>
-                    <div className="flex items-center space-x-2">
+                    <div className="flex items-center gap-2 w-full sm:w-auto">
                       <button 
                         onClick={() => setShowAISubModal(true)} 
-                        className="flex items-center space-x-2 bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 text-white px-4 py-2.5 rounded-xl transition-all duration-200 shadow-sm font-medium text-sm cursor-pointer"
+                        className="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 text-white px-3 md:px-4 py-2.5 rounded-xl transition-all duration-200 shadow-sm font-medium text-sm cursor-pointer min-h-[44px]"
                       >
                         <BrainIcon className="w-4 h-4" />
                         <span>AI新增</span>
                       </button>
                       <button 
                         onClick={handleAddSubscription} 
-                        className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-xl transition-colors duration-200 shadow-sm font-medium text-sm cursor-pointer"
+                        className="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-3 md:px-4 py-2.5 rounded-xl transition-colors duration-200 shadow-sm font-medium text-sm cursor-pointer min-h-[44px]"
                       >
                         <PlusIcon className="w-4 h-4" />
                         <span>手动新增</span>
@@ -243,14 +243,14 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               )}
 
               {activeTab === 'credentials' && (
-                <div className="space-y-6">
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <h2 className="text-2xl font-bold text-slate-900">凭证库</h2>
-                      <p className="text-slate-400 text-sm mt-1">安全存储您的账号密码</p>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="flex items-center bg-slate-100 rounded-lg p-0.5 mr-1">
+                <div className="space-y-5 md:space-y-6">
+                  <div className="flex flex-col gap-3">
+                    <div className="hidden md:flex justify-between items-end">
+                      <div>
+                        <h2 className="text-2xl font-bold text-slate-900">凭证库</h2>
+                        <p className="text-slate-400 text-sm mt-1">安全存储您的账号密码</p>
+                      </div>
+                      <div className="flex items-center bg-slate-100 rounded-lg p-0.5">
                         <button
                           onClick={() => setCredViewMode('card')}
                           className={`p-1.5 rounded-md transition-colors cursor-pointer ${
@@ -270,30 +270,68 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                           <TableViewIcon className="w-4 h-4" />
                         </button>
                       </div>
+                    </div>
+                    <div className="flex items-center gap-2 overflow-x-auto">
                       <button
                         onClick={() => setShowAICredModal(true)}
-                        className="flex items-center space-x-2 bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 text-white px-4 py-2.5 rounded-xl transition-all duration-200 shadow-sm font-medium text-sm cursor-pointer"
+                        className="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 text-white px-3 md:px-4 py-2.5 rounded-xl transition-all duration-200 shadow-sm font-medium text-sm cursor-pointer min-h-[44px] whitespace-nowrap"
                       >
                         <BrainIcon className="w-4 h-4" />
                         <span>AI解析</span>
                       </button>
                       <button
                         onClick={() => setShowImportModal(true)}
-                        className="flex items-center space-x-2 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-600 hover:text-blue-600 px-3 py-2 rounded-lg transition-colors duration-200 font-medium text-sm cursor-pointer"
+                        className="flex items-center justify-center space-x-2 bg-white border border-slate-200 hover:border-blue-300 hover:bg-blue-50 text-slate-600 hover:text-blue-600 px-3 py-2.5 rounded-xl transition-colors duration-200 font-medium text-sm cursor-pointer min-h-[44px] whitespace-nowrap"
                       >
                         <UploadIcon className="w-4 h-4" />
-                        <span>导入CSV</span>
+                        <span className="hidden sm:inline">导入CSV</span>
+                        <span className="sm:hidden">导入</span>
                       </button>
                       <button
                         onClick={() => setShowAddCredModal(true)}
-                        className="flex items-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2.5 rounded-xl transition-colors duration-200 shadow-sm font-medium text-sm cursor-pointer"
+                        className="flex-1 sm:flex-none flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white px-3 md:px-4 py-2.5 rounded-xl transition-colors duration-200 shadow-sm font-medium text-sm cursor-pointer min-h-[44px] whitespace-nowrap"
                       >
                         <PlusIcon className="w-4 h-4" />
                         <span>手动新增</span>
                       </button>
                     </div>
                   </div>
-                  {credViewMode === 'card' ? (
+                  {credViewMode === 'table' ? (
+                    <>
+                      <div className="hidden md:block">
+                        {vaultData.credentials.length > 0 ? (
+                          <CredentialTable
+                            credentials={vaultData.credentials}
+                            onCredentialClick={handleCredentialClick}
+                            onEdit={handleEditCredential}
+                            onDelete={(id) => onDeleteCredential(id)}
+                          />
+                        ) : (
+                          <div className="py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
+                            <KeyIcon className="w-12 h-12 text-slate-200 mb-4" />
+                            <p className="text-slate-400 font-medium text-sm">暂无存储凭证</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="grid grid-cols-1 gap-4 md:hidden">
+                        {vaultData.credentials.map(cred => (
+                          <CredentialRow
+                            key={cred.id}
+                            credential={cred}
+                            onClick={() => handleCredentialClick(cred)}
+                            onEdit={() => handleEditCredential(cred)}
+                            onDelete={() => onDeleteCredential(cred.id)}
+                          />
+                        ))}
+                        {vaultData.credentials.length === 0 && (
+                          <div className="col-span-full py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
+                            <KeyIcon className="w-12 h-12 text-slate-200 mb-4" />
+                            <p className="text-slate-400 font-medium text-sm">暂无存储凭证</p>
+                          </div>
+                        )}
+                      </div>
+                    </>
+                  ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {vaultData.credentials.map(cred => (
                         <CredentialRow
@@ -311,20 +349,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </div>
                       )}
                     </div>
-                  ) : (
-                    vaultData.credentials.length > 0 ? (
-                      <CredentialTable
-                        credentials={vaultData.credentials}
-                        onCredentialClick={handleCredentialClick}
-                        onEdit={handleEditCredential}
-                        onDelete={(id) => onDeleteCredential(id)}
-                      />
-                    ) : (
-                      <div className="py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
-                        <KeyIcon className="w-12 h-12 text-slate-200 mb-4" />
-                        <p className="text-slate-400 font-medium text-sm">暂无存储凭证</p>
-                      </div>
-                    )
                   )}
                 </div>
               )}

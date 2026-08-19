@@ -32,7 +32,9 @@ go run main.go
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
 | `PORT` | 服务端口 | 8080 |
-| `JWT_SECRET` | JWT 密钥 | subvault-dev-secret... |
+| `JWT_SECRET` | JWT 密钥 | 开发环境自动生成 |
+| `ENCRYPTION_KEY` | 敏感字段加密密钥 | 开发环境自动生成 |
+| `MASTER_KEY` | 唯一登录主密钥 | 开发环境默认 `subvault` |
 | `DATABASE_PATH` | 数据库路径 | ./data/subvault.db |
 | `ENV` | 环境 | development |
 

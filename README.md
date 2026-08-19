@@ -51,7 +51,7 @@ cd subvault
 
 # 生产环境：配置环境变量
 cp .env.production.example .env
-# 编辑 .env 填入 JWT_SECRET 和 ENCRYPTION_KEY
+# 编辑 .env 填入 JWT_SECRET、ENCRYPTION_KEY、MASTER_KEY
 
 # 启动服务
 docker-compose up -d
@@ -70,7 +70,10 @@ openssl rand -hex 32
 # .env 文件
 JWT_SECRET=<32字符以上的随机字符串>
 ENCRYPTION_KEY=<32字符以上的随机字符串>
+MASTER_KEY=<登录主密钥>
 ```
+
+登录只认 `MASTER_KEY`。输错密码会直接拒绝，不会再创建新账户。`JWT_SECRET` 只用于签发会话，`ENCRYPTION_KEY` 只用于加密库内敏感字段。
 
 敏感数据（密码、API 密钥）使用 AES-256-GCM 加密存储。
 

@@ -65,7 +65,7 @@ export const CredentialRow: React.FC<CredentialRowProps> = ({ credential: cred, 
           </div>
 
           {/* 操作按钮 */}
-          <div className="flex items-center space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="flex items-center space-x-0.5 touch-action-visible md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
             {onEdit && (
               <button
                 onClick={(e) => { e.stopPropagation(); onEdit(); }}

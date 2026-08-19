@@ -95,15 +95,15 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/10 backdrop-blur-md p-4 animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="sub-modal-title">
-      <div className="bg-white shadow-2xl rounded-[2rem] w-full max-w-[440px] overflow-hidden animate-slide-up border border-slate-100">
-        <div className="p-7 border-b border-slate-50 flex justify-between items-center">
+    <div className="modal-overlay animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="sub-modal-title">
+      <div className="modal-sheet max-w-[440px] md:animate-slide-up">
+        <div className="p-5 md:p-7 border-b border-slate-50 flex justify-between items-center flex-shrink-0">
           <h3 id="sub-modal-title" className="text-lg font-bold text-slate-800 tracking-tight">
             {isEditMode ? '编辑订阅' : '添加订阅服务'}
           </h3>
           <button onClick={handleClose} className="text-slate-300 hover:text-slate-500 text-2xl cursor-pointer transition-colors duration-200" aria-label="关闭弹窗">&times;</button>
         </div>
-        <div className="p-7 space-y-5 max-h-[60vh] overflow-y-auto">
+        <div className="p-5 md:p-7 space-y-5 overflow-y-auto page-scroll flex-1 min-h-0">
           <div className="space-y-1.5">
             <label htmlFor="sub-name" className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">服务名称</label>
             <input 
@@ -217,7 +217,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
                 <input 
                   id="sub-start-date" 
                   type="date" 
-                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-800 font-bold outline-none text-[11px]"
+                  className="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-slate-800 font-bold outline-none text-sm md:text-[11px]"
                   value={formData.startDate || ''} 
                   onChange={e => setFormData({...formData, startDate: e.target.value})}
                 />
@@ -260,9 +260,9 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
             />
           </div>
         </div>
-        <div className="p-7 border-t border-slate-50 flex justify-end space-x-3 bg-slate-50/20">
-          <button onClick={handleClose} className="px-5 py-2.5 text-[12px] font-bold text-slate-400 hover:text-slate-600 transition-colors duration-200 uppercase tracking-widest cursor-pointer">取消</button>
-          <button onClick={handleSubmit} className="px-8 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-sm active:scale-95 text-[12px] uppercase tracking-widest cursor-pointer transition-colors duration-200">
+        <div className="p-5 md:p-7 border-t border-slate-50 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:space-x-3 bg-slate-50/20 flex-shrink-0">
+          <button onClick={handleClose} className="px-5 py-2.5 text-[12px] font-bold text-slate-400 hover:text-slate-600 transition-colors duration-200 uppercase tracking-widest cursor-pointer min-h-[44px]">取消</button>
+          <button onClick={handleSubmit} className="px-8 py-2.5 bg-brand-600 hover:bg-brand-700 text-white font-bold rounded-xl shadow-sm active:scale-95 text-[12px] uppercase tracking-widest cursor-pointer transition-colors duration-200 min-h-[44px]">
             {isEditMode ? '保存修改' : '保存记录'}
           </button>
         </div>

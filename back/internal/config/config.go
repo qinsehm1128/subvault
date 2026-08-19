@@ -10,6 +10,7 @@ import (
 type Config struct {
 	JWTSecret     string
 	EncryptionKey string // 用于加密敏感数据的密钥
+	MasterKey     string // 唯一登录主密钥，来自环境变量
 	DatabasePath  string
 	Environment   string
 }
@@ -38,6 +39,15 @@ func Load() *Config {
 		log.Printf("警告: 未设置 ENCRYPTION_KEY，已生成临时密钥（仅用于开发环境）")
 	}
 
+	masterKey := os.Getenv("MASTER_KEY")
+	if masterKey == "" {
+		if env == "production" {
+			log.Fatal("生产环境必须设置 MASTER_KEY 环境变量")
+		}
+		masterKey = "subvault"
+		log.Printf("警告: 未设置 MASTER_KEY，开发环境默认主密钥为 subvault")
+	}
+
 	dbPath := os.Getenv("DATABASE_PATH")
 	if dbPath == "" {
 		dbPath = "./data/subvault.db"
@@ -46,6 +56,7 @@ func Load() *Config {
 	return &Config{
 		JWTSecret:     jwtSecret,
 		EncryptionKey: encryptionKey,
+		MasterKey:     masterKey,
 		DatabasePath:  dbPath,
 		Environment:   env,
 	}

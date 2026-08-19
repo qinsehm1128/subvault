@@ -51,17 +51,17 @@ export const AnalyticsPage: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50 px-8 py-8">
-      <div className="mx-auto space-y-6">
+    <div className="flex-1 overflow-y-auto page-scroll bg-slate-50 px-4 py-5 md:px-8 md:py-8">
+      <div className="mx-auto space-y-5 md:space-y-6">
         {/* 头部 */}
-        <div className="flex justify-between items-end">
-          <div>
+        <div className="flex justify-between items-center md:items-end">
+          <div className="hidden md:block">
             <h2 className="text-2xl font-bold text-slate-900">数据分析</h2>
             <p className="text-slate-400 text-sm mt-1">订阅支出的可视化分析</p>
           </div>
           <button
             onClick={loadAnalytics}
-            className="px-4 py-2 text-sm text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"
+            className="px-4 py-2 text-sm text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors min-h-[40px]"
           >
             刷新数据
           </button>
@@ -78,9 +78,9 @@ export const AnalyticsPage: React.FC = () => {
         {/* 图表区域 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* 月度趋势 */}
-          <div className="bg-white rounded-xl border border-slate-200/60 p-5">
+          <div className="bg-white rounded-xl border border-slate-200/60 p-4 md:p-5">
             <h3 className="text-sm font-semibold text-slate-700 mb-4">月度支出趋势</h3>
-            <div className="h-64">
+            <div className="h-52 md:h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data.monthlySpending}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
@@ -97,9 +97,9 @@ export const AnalyticsPage: React.FC = () => {
           </div>
 
           {/* 分类占比 */}
-          <div className="bg-white rounded-xl border border-slate-200/60 p-5">
+          <div className="bg-white rounded-xl border border-slate-200/60 p-4 md:p-5">
             <h3 className="text-sm font-semibold text-slate-700 mb-4">分类占比</h3>
-            <div className="h-64 flex items-center">
+            <div className="h-52 md:h-64 flex items-center">
               {data.categoryBreakdown.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -109,7 +109,7 @@ export const AnalyticsPage: React.FC = () => {
                       nameKey="category"
                       cx="50%"
                       cy="50%"
-                      outerRadius={80}
+                      outerRadius={70}
                       label={({ category, percentage }) => `${category} ${percentage.toFixed(0)}%`}
                       labelLine={{ stroke: '#94A3B8' }}
                     >
@@ -133,16 +133,16 @@ export const AnalyticsPage: React.FC = () => {
           <div className="space-y-3">
             {data.categoryBreakdown.length > 0 ? (
               data.categoryBreakdown.map((cat, idx) => (
-                <div key={cat.category} className="flex items-center space-x-4">
+                <div key={cat.category} className="flex items-center space-x-3 md:space-x-4">
                   <div 
                     className="w-3 h-3 rounded-full flex-shrink-0" 
                     style={{ backgroundColor: COLORS[idx % COLORS.length] }} 
                   />
                   <div className="flex-1 min-w-0">
-                    <div className="flex justify-between items-center mb-1">
-                      <span className="text-sm font-medium text-slate-700">{cat.category}</span>
-                      <span className="text-sm text-slate-500">
-                        ¥{cat.amount.toFixed(0)}/月 · {cat.count} 个订阅
+                    <div className="flex justify-between items-center mb-1 gap-2">
+                      <span className="text-sm font-medium text-slate-700 truncate">{cat.category}</span>
+                      <span className="text-xs md:text-sm text-slate-500 whitespace-nowrap">
+                        ¥{cat.amount.toFixed(0)}/月 · {cat.count} 个
                       </span>
                     </div>
                     <div className="w-full bg-slate-100 rounded-full h-2">
@@ -195,9 +195,9 @@ const StatCard: React.FC<{ title: string; value: string; color: string }> = ({ t
   };
 
   return (
-    <div className={`rounded-xl border p-4 ${colorClasses[color]}`}>
+    <div className={`rounded-xl border p-3 md:p-4 ${colorClasses[color]}`}>
       <p className="text-xs font-medium opacity-70 mb-1">{title}</p>
-      <p className="text-2xl font-bold">{value}</p>
+      <p className="text-xl md:text-2xl font-bold">{value}</p>
     </div>
   );
 };

@@ -57,7 +57,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
           </div>
 
           {/* 操作按钮 */}
-          <div className="flex items-center space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="flex items-center space-x-0.5 touch-action-visible md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
             {onRefresh && sub.frequencyUnit !== 'PERMANENT' && (
               <button
                 onClick={(e) => { e.stopPropagation(); onRefresh(); }}

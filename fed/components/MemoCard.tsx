@@ -110,7 +110,7 @@ export const MemoCard: React.FC<MemoCardProps> = ({ memo, onEdit, onDelete }) =>
           </div>
           
           {/* Action buttons - visible on hover */}
-          <div className="flex items-center space-x-0.5 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <div className="flex items-center space-x-0.5 touch-action-visible md:opacity-0 md:group-hover:opacity-100 transition-opacity duration-200">
             <button 
               onClick={handleEdit}
               className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors duration-200" 

@@ -63,9 +63,9 @@ export const AICredentialPreviewModal: React.FC<AICredentialPreviewModalProps> =
   if (!isOpen || credentials.length === 0) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/10 backdrop-blur-md p-4 animate-fade-in">
-      <div className="bg-white shadow-xl rounded-2xl w-full max-w-2xl overflow-hidden border border-slate-200/60">
-        <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+    <div className="modal-overlay animate-fade-in">
+      <div className="modal-sheet max-w-2xl">
+        <div className="p-5 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-gradient-to-br from-violet-500 to-blue-500 rounded-xl">
               <BrainIcon className="w-5 h-5 text-white" />
@@ -82,7 +82,7 @@ export const AICredentialPreviewModal: React.FC<AICredentialPreviewModalProps> =
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 text-xl cursor-pointer">&times;</button>
         </div>
 
-        <div className="p-5">
+        <div className="p-5 overflow-y-auto page-scroll flex-1 min-h-0">
           <div className="flex items-center justify-between text-sm mb-3">
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
@@ -95,7 +95,7 @@ export const AICredentialPreviewModal: React.FC<AICredentialPreviewModalProps> =
             </label>
           </div>
 
-          <div className="max-h-80 overflow-y-auto space-y-2 border border-slate-100 rounded-xl p-3">
+          <div className="max-h-64 md:max-h-80 overflow-y-auto space-y-2 border border-slate-100 rounded-xl p-3">
             {parsedData.map((item, idx) => (
               <label
                 key={idx}
@@ -140,17 +140,17 @@ export const AICredentialPreviewModal: React.FC<AICredentialPreviewModalProps> =
           </div>
         </div>
 
-        <div className="p-5 border-t border-slate-100 flex justify-end space-x-3 bg-slate-50/50">
+        <div className="p-5 border-t border-slate-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:space-x-3 bg-slate-50/50 flex-shrink-0">
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 cursor-pointer"
+            className="px-4 py-2.5 text-sm text-slate-500 hover:text-slate-700 cursor-pointer min-h-[44px]"
           >
             取消
           </button>
           <button
             onClick={handleConfirm}
             disabled={selectedCount === 0}
-            className="px-5 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors disabled:cursor-not-allowed"
+            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors disabled:cursor-not-allowed min-h-[44px]"
           >
             导入 {selectedCount} 条凭据
           </button>

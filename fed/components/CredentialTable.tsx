@@ -65,7 +65,7 @@ const TableRow: React.FC<{
           <button
             onClick={(e) => handleCopy(cred.username, 'username', e)}
             className={`text-[10px] px-1 py-0.5 rounded cursor-pointer transition-colors ${
-              copiedField === 'username' ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 hover:text-blue-600 opacity-0 group-hover:opacity-100'
+              copiedField === 'username' ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 hover:text-blue-600 touch-action-visible md:opacity-0 md:group-hover:opacity-100'
             }`}
           >
             {copiedField === 'username' ? '已复制' : '复制'}
@@ -81,7 +81,7 @@ const TableRow: React.FC<{
           </span>
           <button
             onClick={(e) => { e.stopPropagation(); setRevealed(!revealed); }}
-            className="p-0.5 text-slate-400 hover:text-blue-600 cursor-pointer transition-colors opacity-0 group-hover:opacity-100"
+            className="p-0.5 text-slate-400 hover:text-blue-600 cursor-pointer transition-colors touch-action-visible md:opacity-0 md:group-hover:opacity-100"
           >
             <EyeIcon className="w-3.5 h-3.5" />
           </button>
@@ -89,7 +89,7 @@ const TableRow: React.FC<{
             <button
               onClick={(e) => handleCopy(cred.password || '', 'password', e)}
               className={`text-[10px] px-1 py-0.5 rounded cursor-pointer transition-colors ${
-                copiedField === 'password' ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 hover:text-blue-600 opacity-0 group-hover:opacity-100'
+                copiedField === 'password' ? 'text-emerald-600 bg-emerald-50' : 'text-slate-400 hover:text-blue-600 touch-action-visible md:opacity-0 md:group-hover:opacity-100'
               }`}
             >
               {copiedField === 'password' ? '已复制' : '复制'}
@@ -118,7 +118,7 @@ const TableRow: React.FC<{
 
       {/* 操作 */}
       <td className="px-4 py-3">
-        <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center space-x-1 touch-action-visible md:opacity-0 md:group-hover:opacity-100 transition-opacity">
           <button
             onClick={(e) => { e.stopPropagation(); onEdit(); }}
             className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors"

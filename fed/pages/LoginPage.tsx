@@ -44,8 +44,8 @@ export const LoginPage: React.FC<LoginPageProps> = ({
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-slate-50 selection:bg-brand-100">
-      <div className="w-full max-w-[360px] p-10 bg-white rounded-[2.5rem] shadow-card animate-slide-up border border-slate-100">
+    <div className="min-h-[100dvh] flex items-center justify-center bg-slate-50 selection:bg-brand-100 px-4 py-8 safe-top safe-bottom">
+      <div className="w-full max-w-[360px] p-6 sm:p-10 bg-white rounded-3xl sm:rounded-[2.5rem] shadow-card animate-slide-up border border-slate-100">
         <div className="flex justify-center mb-8">
           <div className="p-4 bg-brand-50 rounded-2xl">
             <LockIcon className="w-7 h-7 text-brand-600" />
@@ -71,7 +71,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
                 value={totpCode}
                 onChange={(e) => setTotpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
                 placeholder="000000"
-                className="w-full bg-slate-50 border border-slate-100 text-slate-800 px-5 py-4 rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-colors duration-200 placeholder:text-slate-300 text-center text-2xl font-mono tracking-[0.5em]"
+                className="w-full bg-slate-50 border border-slate-100 text-slate-800 px-5 py-4 rounded-2xl focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 outline-none transition-colors duration-200 placeholder:text-slate-300 text-center text-2xl font-mono tracking-[0.3em] sm:tracking-[0.5em]"
                 autoFocus
                 maxLength={6}
                 aria-describedby={error ? "error-message" : undefined}
@@ -119,7 +119,7 @@ export const LoginPage: React.FC<LoginPageProps> = ({
         </form>
 
         <p className="mt-8 pt-6 border-t border-slate-50 text-center text-[10px] text-slate-300">
-          {totpRequired ? '打开身份验证器应用获取验证码' : '首次使用？输入任意密钥即可创建新的保险库'}
+          {totpRequired ? '打开身份验证器应用获取验证码' : '请输入主密钥解锁保险库'}
         </p>
       </div>
     </div>

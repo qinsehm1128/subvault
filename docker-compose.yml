@@ -12,6 +12,7 @@ services:
       - ENV=production
       - JWT_SECRET=${JWT_SECRET}
       - ENCRYPTION_KEY=${ENCRYPTION_KEY}
+      - MASTER_KEY=${MASTER_KEY}
     volumes:
       - ./back/data:/app/data
     restart: unless-stopped

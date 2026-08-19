@@ -2,7 +2,11 @@
 <html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f8fafc" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="mobile-web-app-capable" content="yes" />
     <title>SubVault - 极简订阅管家</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- 引入 Noto Sans SC (思源黑体) -->
@@ -58,10 +62,13 @@
         -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
       }
+      html, body, #root {
+        height: 100%;
+        min-height: 100dvh;
+      }
       body {
         background-color: #f9fafb;
         color: #272e3b;
-        /* 中文不需要过紧的字间距 */
         letter-spacing: 0.01em;
         overflow-x: hidden;
       }

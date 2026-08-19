@@ -186,10 +186,10 @@ export const AISubscriptionModal: React.FC<AISubscriptionModalProps> = ({
   // 显示选择界面
   if (parsedResults && parsedResults.length > 1) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/10 backdrop-blur-md p-4 animate-fade-in">
-        <div className="bg-white shadow-2xl rounded-2xl w-full max-w-lg overflow-hidden border border-slate-100">
+      <div className="modal-overlay animate-fade-in">
+        <div className="modal-sheet max-w-lg">
           {/* 头部 */}
-          <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-violet-50 to-blue-50">
+          <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-violet-50 to-blue-50 flex-shrink-0">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-blue-500 rounded-xl flex items-center justify-center">
                 <BrainIcon className="w-5 h-5 text-white" />
@@ -208,7 +208,7 @@ export const AISubscriptionModal: React.FC<AISubscriptionModalProps> = ({
           </div>
 
           {/* 订阅列表 */}
-          <div className="p-4 max-h-80 overflow-y-auto space-y-2">
+          <div className="p-4 overflow-y-auto page-scroll space-y-2 flex-1 min-h-0">
             {parsedResults.map((sub, index) => (
               <div
                 key={index}
@@ -257,24 +257,24 @@ export const AISubscriptionModal: React.FC<AISubscriptionModalProps> = ({
           )}
 
           {/* 底部 */}
-          <div className="p-6 border-t border-slate-100 flex justify-between items-center bg-slate-50/50">
+          <div className="p-4 md:p-6 border-t border-slate-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-slate-50/50 flex-shrink-0">
             <button
               onClick={() => setParsedResults(null)}
-              className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 cursor-pointer"
+              className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 cursor-pointer min-h-[44px]"
             >
               ← 重新识别
             </button>
-            <div className="flex space-x-3">
+            <div className="flex flex-col-reverse sm:flex-row gap-2 sm:space-x-3">
               <button 
                 onClick={handleClose} 
-                className="px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-700 cursor-pointer transition-colors"
+                className="px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-700 cursor-pointer transition-colors min-h-[44px]"
               >
                 取消
               </button>
               <button 
                 onClick={handleConfirmSelection}
                 disabled={selectedIndices.size === 0}
-                className="px-6 py-2.5 bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 disabled:from-slate-300 disabled:to-slate-300 text-white font-medium rounded-xl shadow-sm cursor-pointer transition-all"
+                className="px-6 py-2.5 bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 disabled:from-slate-300 disabled:to-slate-300 text-white font-medium rounded-xl shadow-sm cursor-pointer transition-all min-h-[44px]"
               >
                 添加 {selectedIndices.size} 个订阅
               </button>
@@ -286,10 +286,10 @@ export const AISubscriptionModal: React.FC<AISubscriptionModalProps> = ({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/10 backdrop-blur-md p-4 animate-fade-in">
-      <div className="bg-white shadow-2xl rounded-2xl w-full max-w-lg overflow-hidden border border-slate-100">
+    <div className="modal-overlay animate-fade-in">
+      <div className="modal-sheet max-w-lg">
         {/* 头部 */}
-        <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-violet-50 to-blue-50">
+        <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-violet-50 to-blue-50 flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-blue-500 rounded-xl flex items-center justify-center">
               <BrainIcon className="w-5 h-5 text-white" />
@@ -308,7 +308,7 @@ export const AISubscriptionModal: React.FC<AISubscriptionModalProps> = ({
         </div>
 
         {/* 内容 */}
-        <div className="p-6 space-y-4">
+        <div className="p-5 md:p-6 space-y-4 overflow-y-auto page-scroll flex-1 min-h-0">
           {/* 文本输入 */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
@@ -354,11 +354,11 @@ export const AISubscriptionModal: React.FC<AISubscriptionModalProps> = ({
               <div
                 onClick={() => fileInputRef.current?.click()}
                 onPaste={handlePaste}
-                className="border-2 border-dashed border-slate-200 hover:border-blue-300 rounded-xl p-8 text-center cursor-pointer transition-colors group"
+                className="border-2 border-dashed border-slate-200 hover:border-blue-300 rounded-xl p-6 md:p-8 text-center cursor-pointer transition-colors group"
               >
                 <UploadIcon className="w-8 h-8 text-slate-300 group-hover:text-blue-400 mx-auto mb-2 transition-colors" />
                 <p className="text-sm text-slate-400 group-hover:text-slate-500">
-                  点击上传或 <span className="text-blue-500">Ctrl+V</span> 粘贴截图
+                  点击上传或粘贴截图
                 </p>
                 <p className="text-xs text-slate-300 mt-1">支持 PNG、JPG、WebP 格式</p>
               </div>
@@ -389,17 +389,17 @@ export const AISubscriptionModal: React.FC<AISubscriptionModalProps> = ({
         </div>
 
         {/* 底部 */}
-        <div className="p-6 border-t border-slate-100 flex justify-end space-x-3 bg-slate-50/50">
+        <div className="p-4 md:p-6 border-t border-slate-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:space-x-3 bg-slate-50/50 flex-shrink-0">
           <button 
             onClick={handleClose} 
-            className="px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-700 cursor-pointer transition-colors"
+            className="px-5 py-2.5 text-sm font-medium text-slate-500 hover:text-slate-700 cursor-pointer transition-colors min-h-[44px]"
           >
             取消
           </button>
           <button 
             onClick={handleSubmit}
             disabled={isLoading || (!text.trim() && !imageData)}
-            className="px-6 py-2.5 bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 disabled:from-slate-300 disabled:to-slate-300 text-white font-medium rounded-xl shadow-sm cursor-pointer transition-all flex items-center space-x-2"
+            className="px-6 py-2.5 bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 disabled:from-slate-300 disabled:to-slate-300 text-white font-medium rounded-xl shadow-sm cursor-pointer transition-all flex items-center justify-center space-x-2 min-h-[44px]"
           >
             {isLoading ? (
               <>

@@ -225,27 +225,27 @@ export const AIPage: React.FC = () => {
   return (
     <div className="flex-1 flex flex-col h-full bg-slate-50">
       {/* Header */}
-      <div className="bg-white border-b border-slate-200/60 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm">
+      <div className="bg-white border-b border-slate-200/60 px-4 md:px-6 py-3 md:py-4 flex items-center justify-between gap-3">
+        <div className="flex items-center space-x-3 min-w-0">
+          <div className="w-9 h-9 md:w-10 md:h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-sm flex-shrink-0">
             <BrainIcon className="w-5 h-5 text-white" />
           </div>
-          <div>
-            <h2 className="text-base font-semibold text-slate-900">智能财务助手</h2>
+          <div className="min-w-0 hidden sm:block">
+            <h2 className="text-base font-semibold text-slate-900 truncate">智能财务助手</h2>
             <p className="text-xs text-slate-400">AI 驱动的订阅分析与建议</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2 flex-shrink-0">
           <button
             onClick={handleAnalyze}
             disabled={isAnalyzing}
-            className="px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 disabled:from-slate-300 disabled:to-slate-400 text-white text-xs font-medium rounded-lg cursor-pointer transition-all duration-200 shadow-sm"
+            className="px-3 md:px-4 py-2 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 disabled:from-slate-300 disabled:to-slate-400 text-white text-xs font-medium rounded-lg cursor-pointer transition-all duration-200 shadow-sm min-h-[40px]"
           >
-            {isAnalyzing ? '分析中...' : '生成审计报告'}
+            {isAnalyzing ? '分析中...' : '生成报告'}
           </button>
           <button
             onClick={() => setShowConfig(true)}
-            className="px-3 py-2 text-slate-500 hover:text-violet-600 hover:bg-violet-50 text-xs font-medium rounded-lg cursor-pointer transition-colors duration-200"
+            className="px-3 py-2 text-slate-500 hover:text-violet-600 hover:bg-violet-50 text-xs font-medium rounded-lg cursor-pointer transition-colors duration-200 min-h-[40px]"
           >
             配置
           </button>
@@ -253,7 +253,7 @@ export const AIPage: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="bg-white border-b border-slate-200/60 px-6">
+      <div className="bg-white border-b border-slate-200/60 px-4 md:px-6">
         <div className="flex space-x-1">
           {[
             { key: 'chat', label: '对话' },
@@ -279,7 +279,7 @@ export const AIPage: React.FC = () => {
         {activeTab === 'chat' ? (
           <div className="h-full flex flex-col">
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-6 py-6">
+            <div className="flex-1 overflow-y-auto page-scroll px-4 py-4 md:px-6 md:py-6">
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-slate-400">
                   <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
@@ -337,15 +337,15 @@ export const AIPage: React.FC = () => {
             </div>
 
             {/* Input */}
-            <div className="bg-white border-t border-slate-200/60 px-6 py-4">
-              <div className="max-w-3xl mx-auto flex items-end space-x-3">
+            <div className="bg-white border-t border-slate-200/60 px-3 py-3 md:px-6 md:py-4">
+              <div className="max-w-3xl mx-auto flex items-end space-x-2 md:space-x-3">
                 <div className="flex-1 relative">
                   <textarea
                     ref={textareaRef}
                     value={inputMessage}
                     onChange={handleInputChange}
                     onKeyDown={handleKeyDown}
-                    placeholder="输入消息... (Shift+Enter 换行)"
+                    placeholder="输入消息..."
                     rows={1}
                     className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 outline-none focus:ring-2 focus:ring-violet-500/20 focus:border-violet-400 resize-none transition-all duration-200"
                     style={{ minHeight: '44px', maxHeight: '120px' }}
@@ -354,7 +354,7 @@ export const AIPage: React.FC = () => {
                 <button
                   onClick={handleSendMessage}
                   disabled={!inputMessage.trim() || isSending}
-                  className="px-5 py-3 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 disabled:from-slate-200 disabled:to-slate-300 text-white text-sm font-medium rounded-xl cursor-pointer transition-all duration-200 shadow-sm"
+                  className="px-4 md:px-5 py-3 bg-gradient-to-r from-violet-500 to-purple-600 hover:from-violet-600 hover:to-purple-700 disabled:from-slate-200 disabled:to-slate-300 text-white text-sm font-medium rounded-xl cursor-pointer transition-all duration-200 shadow-sm min-h-[44px]"
                 >
                   {isSending ? '...' : '发送'}
                 </button>
@@ -371,7 +371,7 @@ export const AIPage: React.FC = () => {
             </div>
           </div>
         ) : (
-          <div className="h-full overflow-y-auto px-6 py-6">
+          <div className="h-full overflow-y-auto page-scroll px-4 py-4 md:px-6 md:py-6">
             <div className="max-w-3xl mx-auto">
               {selectedReport ? (
                 <div className="space-y-6 animate-fade-in">
@@ -406,8 +406,8 @@ export const AIPage: React.FC = () => {
                         onClick={() => setSelectedReport(report)}
                         className="bg-white border border-slate-200/60 rounded-xl p-4 cursor-pointer hover:border-violet-200 hover:shadow-md transition-all duration-200"
                       >
-                        <div className="flex items-center justify-between">
-                          <div>
+                        <div className="flex items-start justify-between gap-3">
+                          <div className="min-w-0">
                             <p className="text-sm font-semibold text-slate-800">
                               月支出 ¥{report.totalMonthly.toFixed(0)} / 年支出 ¥{report.totalYearly.toFixed(0)}
                             </p>
@@ -415,7 +415,7 @@ export const AIPage: React.FC = () => {
                               {report.categories.length} 个分类 · {report.insights.length} 条建议
                             </p>
                           </div>
-                          <span className="text-xs text-slate-400">
+                          <span className="text-xs text-slate-400 flex-shrink-0">
                             {new Date(report.createdAt).toLocaleDateString()}
                           </span>
                         </div>

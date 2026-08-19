@@ -195,16 +195,16 @@ export const SettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="flex-1 overflow-y-auto bg-slate-50 px-8 py-8">
-      <div className="mx-auto space-y-6">
+    <div className="flex-1 overflow-y-auto page-scroll bg-slate-50 px-4 py-5 md:px-8 md:py-8">
+      <div className="mx-auto space-y-5 md:space-y-6">
         {/* 头部 */}
-        <div>
+        <div className="hidden md:block">
           <h2 className="text-2xl font-bold text-slate-900">设置</h2>
           <p className="text-slate-400 text-sm mt-1">管理标签、通知提醒和安全设置</p>
         </div>
 
         {/* 切换标签 */}
-        <div className="flex space-x-1 bg-white rounded-lg p-1 border border-slate-200/60 w-fit">
+        <div className="flex space-x-1 bg-white rounded-lg p-1 border border-slate-200/60 w-full md:w-fit overflow-x-auto">
           {[
             { key: 'tags', label: '标签管理' },
             { key: 'notifications', label: '到期提醒' },
@@ -213,7 +213,7 @@ export const SettingsPage: React.FC = () => {
             <button
               key={tab.key}
               onClick={() => setActiveSection(tab.key as 'tags' | 'notifications' | 'security')}
-              className={`px-4 py-2 text-sm font-medium rounded-md cursor-pointer transition-colors ${
+              className={`flex-1 md:flex-none px-3 md:px-4 py-2.5 text-sm font-medium rounded-md cursor-pointer transition-colors whitespace-nowrap min-h-[40px] ${
                 activeSection === tab.key
                   ? 'bg-blue-600 text-white'
                   : 'text-slate-500 hover:text-slate-700'
@@ -230,34 +230,36 @@ export const SettingsPage: React.FC = () => {
             {/* 创建标签 */}
             <div className="bg-white rounded-xl border border-slate-200/60 p-5">
               <h3 className="text-sm font-semibold text-slate-700 mb-4">创建新标签</h3>
-              <div className="flex items-center space-x-3">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <input
                   type="text"
                   value={newTagName}
                   onChange={e => setNewTagName(e.target.value)}
                   placeholder="标签名称"
-                  className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+                  className="w-full sm:flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-400 min-h-[44px]"
                   onKeyPress={e => e.key === 'Enter' && handleCreateTag()}
                 />
-                <div className="flex items-center space-x-1">
-                  {TAG_COLORS.slice(0, 6).map(color => (
-                    <button
-                      key={color}
-                      onClick={() => setNewTagColor(color)}
-                      className={`w-6 h-6 rounded-full cursor-pointer transition-transform ${
-                        newTagColor === color ? 'ring-2 ring-offset-2 ring-blue-400 scale-110' : ''
-                      }`}
-                      style={{ backgroundColor: color }}
-                    />
-                  ))}
+                <div className="flex items-center justify-between sm:justify-start gap-3">
+                  <div className="flex items-center space-x-1">
+                    {TAG_COLORS.slice(0, 6).map(color => (
+                      <button
+                        key={color}
+                        onClick={() => setNewTagColor(color)}
+                        className={`w-7 h-7 rounded-full cursor-pointer transition-transform ${
+                          newTagColor === color ? 'ring-2 ring-offset-2 ring-blue-400 scale-110' : ''
+                        }`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                  <button
+                    onClick={handleCreateTag}
+                    disabled={!newTagName.trim()}
+                    className="px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors min-h-[44px] min-w-[44px]"
+                  >
+                    <PlusIcon className="w-4 h-4" />
+                  </button>
                 </div>
-                <button
-                  onClick={handleCreateTag}
-                  disabled={!newTagName.trim()}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors"
-                >
-                  <PlusIcon className="w-4 h-4" />
-                </button>
               </div>
             </div>
 
@@ -276,7 +278,7 @@ export const SettingsPage: React.FC = () => {
                       <span className="text-sm font-medium" style={{ color: tag.color }}>{tag.name}</span>
                       <button
                         onClick={() => handleDeleteTag(tag.id)}
-                        className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-rose-500 cursor-pointer transition-all"
+                        className="opacity-100 md:opacity-0 md:group-hover:opacity-100 text-slate-400 hover:text-rose-500 cursor-pointer transition-all p-1"
                       >
                         <TrashIcon className="w-3 h-3" />
                       </button>
@@ -345,13 +347,13 @@ export const SettingsPage: React.FC = () => {
                   {upcoming.map(item => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between p-3 rounded-lg bg-slate-50"
+                      className="flex items-center justify-between gap-3 p-3 rounded-lg bg-slate-50"
                     >
-                      <div>
-                        <p className="text-sm font-medium text-slate-800">{item.name}</p>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium text-slate-800 truncate">{item.name}</p>
                         <p className="text-xs text-slate-400">{item.renewalDate}</p>
                       </div>
-                      <div className="flex items-center space-x-3">
+                      <div className="flex items-center space-x-2 sm:space-x-3 flex-shrink-0">
                         <span className="text-sm font-medium text-slate-600">
                           {item.currency === 'CNY' ? '¥' : item.currency === 'USD' ? '$' : item.currency}
                           {item.cost}
@@ -430,31 +432,33 @@ export const SettingsPage: React.FC = () => {
                     </p>
                     <div className="flex justify-center mb-4">
                       <div className="bg-white p-4 rounded-xl shadow-sm">
-                        <QRCodeSVG value={totpUri} size={200} />
+                        <QRCodeSVG value={totpUri} size={168} className="w-40 h-40 md:w-[200px] md:h-[200px]" />
                       </div>
                     </div>
 
                     <p className="text-sm text-slate-600 mb-2 font-medium">
                       无法扫码？手动输入密钥：
                     </p>
-                    <div className="flex items-center space-x-2">
-                      <code className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2 text-sm font-mono text-slate-700 select-all">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                      <code className="flex-1 bg-white border border-slate-200 rounded-lg px-3 py-2.5 text-sm font-mono text-slate-700 select-all break-all">
                         {showSecret ? totpSecret : '••••••••••••••••'}
                       </code>
-                      <button
-                        onClick={() => setShowSecret(!showSecret)}
-                        className="px-3 py-2 text-sm text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg cursor-pointer transition-colors"
-                      >
-                        {showSecret ? '隐藏' : '显示'}
-                      </button>
-                      <button
-                        onClick={() => {
-                          navigator.clipboard.writeText(totpSecret).catch(() => {});
-                        }}
-                        className="px-3 py-2 text-sm text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg cursor-pointer transition-colors"
-                      >
-                        复制
-                      </button>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={() => setShowSecret(!showSecret)}
+                          className="flex-1 sm:flex-none px-3 py-2.5 text-sm text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg cursor-pointer transition-colors min-h-[44px]"
+                        >
+                          {showSecret ? '隐藏' : '显示'}
+                        </button>
+                        <button
+                          onClick={() => {
+                            navigator.clipboard.writeText(totpSecret).catch(() => {});
+                          }}
+                          className="flex-1 sm:flex-none px-3 py-2.5 text-sm text-slate-500 hover:text-slate-700 border border-slate-200 rounded-lg cursor-pointer transition-colors min-h-[44px]"
+                        >
+                          复制
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -462,7 +466,7 @@ export const SettingsPage: React.FC = () => {
                     <p className="text-sm text-slate-600 mb-3 font-medium">
                       2. 输入身份验证器中显示的6位验证码
                     </p>
-                    <div className="flex items-center space-x-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                       <input
                         type="text"
                         inputMode="numeric"
@@ -473,13 +477,13 @@ export const SettingsPage: React.FC = () => {
                           setTotpError('');
                         }}
                         placeholder="000000"
-                        className="flex-1 bg-white border border-slate-200 rounded-lg px-4 py-3 text-center text-xl font-mono tracking-[0.3em] outline-none focus:border-blue-400"
+                        className="w-full sm:flex-1 bg-white border border-slate-200 rounded-lg px-4 py-3 text-center text-xl font-mono tracking-[0.3em] outline-none focus:border-blue-400 min-h-[48px]"
                         maxLength={6}
                       />
                       <button
                         onClick={handleVerifyTotp}
                         disabled={totpLoading || totpCode.length !== 6}
-                        className="px-5 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors whitespace-nowrap"
+                        className="w-full sm:w-auto px-5 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-slate-300 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors whitespace-nowrap min-h-[48px]"
                       >
                         {totpLoading ? '验证中...' : '确认绑定'}
                       </button>

@@ -152,16 +152,16 @@ export const ImportCredentialsModal: React.FC<ImportCredentialsModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/10 backdrop-blur-md p-4 animate-fade-in">
-      <div className="bg-white shadow-xl rounded-2xl w-full max-w-lg overflow-hidden border border-slate-200/60">
-        <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+    <div className="modal-overlay animate-fade-in">
+      <div className="modal-sheet max-w-lg">
+        <div className="p-5 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
           <h3 className="text-base font-semibold text-slate-900">
             {step === 'upload' ? '导入凭证' : `预览导入 (${selectedCount}/${parsedData.length})`}
           </h3>
           <button onClick={handleClose} className="text-slate-400 hover:text-slate-600 text-xl cursor-pointer">&times;</button>
         </div>
 
-        <div className="p-5">
+        <div className="p-5 overflow-y-auto page-scroll flex-1 min-h-0">
           {step === 'upload' ? (
             <div className="space-y-4">
               <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-8 text-center">
@@ -239,13 +239,13 @@ export const ImportCredentialsModal: React.FC<ImportCredentialsModalProps> = ({
           )}
         </div>
 
-        <div className="p-5 border-t border-slate-100 flex justify-end space-x-3 bg-slate-50/50">
-          <button onClick={handleClose} className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 cursor-pointer">取消</button>
+        <div className="p-5 border-t border-slate-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:space-x-3 bg-slate-50/50 flex-shrink-0">
+          <button onClick={handleClose} className="px-4 py-2.5 text-sm text-slate-500 hover:text-slate-700 cursor-pointer min-h-[44px]">取消</button>
           {step === 'preview' && (
             <button
               onClick={handleImport}
               disabled={selectedCount === 0}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors"
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors min-h-[44px]"
             >
               导入 {selectedCount} 条凭证
             </button>

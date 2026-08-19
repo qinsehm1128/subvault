@@ -76,12 +76,12 @@ export const AddMemoModal: React.FC<AddMemoModalProps> = ({
   const submitButtonText = isEditMode ? '保存修改' : '确认添加';
 
   const modalContainerClass = isFullscreen
-    ? 'fixed inset-0 z-50 flex items-center justify-center bg-slate-900/10 backdrop-blur-md animate-fade-in'
-    : 'fixed inset-0 z-50 flex items-center justify-center bg-slate-900/10 backdrop-blur-md p-4 animate-fade-in';
+    ? 'modal-overlay animate-fade-in !items-stretch'
+    : 'modal-overlay animate-fade-in';
 
   const modalPanelClass = isFullscreen
-    ? 'bg-white shadow-xl rounded-none w-full h-full overflow-hidden animate-slide-up border border-slate-100 flex flex-col'
-    : 'bg-white shadow-xl rounded-[2rem] w-full max-w-[900px] max-h-[90vh] overflow-hidden animate-slide-up border border-slate-100 flex flex-col';
+    ? 'modal-sheet !max-h-none !h-full !rounded-none max-w-none'
+    : 'modal-sheet max-w-[900px] md:animate-slide-up';
 
   return (
     <div
@@ -92,7 +92,7 @@ export const AddMemoModal: React.FC<AddMemoModalProps> = ({
     >
       <div className={modalPanelClass}>
         {/* Header */}
-        <div className="p-7 border-b border-slate-50 flex justify-between items-center flex-shrink-0">
+        <div className="p-5 md:p-7 border-b border-slate-50 flex justify-between items-center flex-shrink-0">
           <h3 id="add-memo-title" className="text-lg font-bold text-slate-800 tracking-tight">
             {modalTitle}
           </h3>
@@ -100,7 +100,7 @@ export const AddMemoModal: React.FC<AddMemoModalProps> = ({
             {/* Fullscreen toggle */}
             <button
               onClick={() => setIsFullscreen(!isFullscreen)}
-              className="text-slate-300 hover:text-slate-500 p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors duration-200"
+              className="hidden md:inline-flex text-slate-300 hover:text-slate-500 p-1.5 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors duration-200"
               aria-label={isFullscreen ? '退出全屏' : '全屏编辑'}
               title={isFullscreen ? '退出全屏' : '全屏编辑'}
             >
@@ -132,7 +132,7 @@ export const AddMemoModal: React.FC<AddMemoModalProps> = ({
         </div>
 
         {/* Form Content */}
-        <div className="p-7 space-y-4 overflow-y-auto flex-1 min-h-0">
+        <div className="p-5 md:p-7 space-y-4 overflow-y-auto page-scroll flex-1 min-h-0">
           {/* Error Message */}
           {error && (
             <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-xl text-sm font-medium">
@@ -195,7 +195,7 @@ export const AddMemoModal: React.FC<AddMemoModalProps> = ({
                 <textarea
                   id="memo-content"
                   className={`w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-slate-800 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none text-sm transition-colors duration-200 resize-none font-mono ${
-                    isFullscreen ? 'min-h-[calc(100vh-380px)]' : 'min-h-[400px]'
+                    isFullscreen ? 'min-h-[calc(100dvh-320px)]' : 'min-h-[180px] md:min-h-[400px]'
                   }`}
                   placeholder="输入备忘录内容，支持 Markdown 语法"
                   value={formData.content || ''}
@@ -219,7 +219,7 @@ export const AddMemoModal: React.FC<AddMemoModalProps> = ({
             ) : (
               <div
                 className={`w-full bg-slate-50 border border-slate-100 rounded-xl p-4 overflow-y-auto ${
-                  isFullscreen ? 'min-h-[calc(100vh-380px)]' : 'min-h-[400px]'
+                  isFullscreen ? 'min-h-[calc(100dvh-320px)]' : 'min-h-[180px] md:min-h-[400px]'
                 }`}
               >
                 {formData.content ? (
@@ -256,16 +256,16 @@ export const AddMemoModal: React.FC<AddMemoModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="p-7 border-t border-slate-50 flex justify-end space-x-3 bg-slate-50/20 flex-shrink-0">
+        <div className="p-5 md:p-7 border-t border-slate-50 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:space-x-3 bg-slate-50/20 flex-shrink-0">
           <button
             onClick={handleClose}
-            className="px-5 py-2.5 text-[12px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest cursor-pointer transition-colors duration-200"
+            className="px-5 py-2.5 text-[12px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest cursor-pointer transition-colors duration-200 min-h-[44px]"
           >
             取消
           </button>
           <button
             onClick={handleSubmit}
-            className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-[12px] uppercase tracking-widest cursor-pointer transition-colors duration-200"
+            className="px-8 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-[12px] uppercase tracking-widest cursor-pointer transition-colors duration-200 min-h-[44px]"
           >
             {submitButtonText}
           </button>

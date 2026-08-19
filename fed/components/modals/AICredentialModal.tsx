@@ -200,9 +200,9 @@ export const AICredentialModal: React.FC<AICredentialModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/10 backdrop-blur-md p-4 animate-fade-in">
-      <div className="bg-white shadow-xl rounded-2xl w-full max-w-2xl overflow-hidden border border-slate-200/60">
-        <div className="p-5 border-b border-slate-100 flex justify-between items-center">
+    <div className="modal-overlay animate-fade-in">
+      <div className="modal-sheet max-w-2xl">
+        <div className="p-5 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
           <div className="flex items-center space-x-3">
             <div className="p-2 bg-gradient-to-br from-violet-500 to-blue-500 rounded-xl">
               <BrainIcon className="w-5 h-5 text-white" />
@@ -215,7 +215,7 @@ export const AICredentialModal: React.FC<AICredentialModalProps> = ({
           <button onClick={handleClose} className="text-slate-400 hover:text-slate-600 text-xl cursor-pointer">&times;</button>
         </div>
 
-        <div className="p-5 space-y-4">
+        <div className="p-5 space-y-4 overflow-y-auto page-scroll flex-1 min-h-0">
           {/* 文件上传区域 */}
           <div className="bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl p-6 text-center hover:border-blue-300 transition-colors">
             <UploadIcon className="w-8 h-8 text-slate-300 mx-auto mb-2" />
@@ -249,7 +249,7 @@ export const AICredentialModal: React.FC<AICredentialModalProps> = ({
               value={text}
               onChange={(e) => setText(e.target.value)}
               placeholder="粘贴包含账号信息的文本...&#10;&#10;例如：&#10;GitHub: username: john@example.com, password: xxx&#10;淘宝账号：手机号 138xxxx，密码 xxx"
-              className="w-full h-48 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none font-mono"
+              className="w-full h-36 md:h-48 bg-slate-50 border border-slate-200 rounded-xl p-4 text-slate-800 text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none resize-none font-mono"
             />
           </div>
 
@@ -268,17 +268,17 @@ export const AICredentialModal: React.FC<AICredentialModalProps> = ({
           )}
         </div>
 
-        <div className="p-5 border-t border-slate-100 flex justify-end space-x-3 bg-slate-50/50">
+        <div className="p-5 border-t border-slate-100 flex flex-col-reverse sm:flex-row sm:justify-end gap-2 sm:space-x-3 bg-slate-50/50 flex-shrink-0">
           <button
             onClick={handleClose}
-            className="px-4 py-2 text-sm text-slate-500 hover:text-slate-700 cursor-pointer"
+            className="px-4 py-2.5 text-sm text-slate-500 hover:text-slate-700 cursor-pointer min-h-[44px]"
           >
             取消
           </button>
           <button
             onClick={handleSubmit}
             disabled={loading || !text.trim()}
-            className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 disabled:from-slate-300 disabled:to-slate-300 text-white text-sm font-medium rounded-lg cursor-pointer transition-all disabled:cursor-not-allowed"
+            className="flex items-center justify-center space-x-2 px-5 py-2.5 bg-gradient-to-r from-violet-500 to-blue-500 hover:from-violet-600 hover:to-blue-600 disabled:from-slate-300 disabled:to-slate-300 text-white text-sm font-medium rounded-lg cursor-pointer transition-all disabled:cursor-not-allowed min-h-[44px]"
           >
             {loading ? (
               <>

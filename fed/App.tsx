@@ -42,7 +42,7 @@ const App: React.FC = () => {
   // 初始化检查中
   if (authLoading && !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-[100dvh] flex items-center justify-center bg-slate-50 px-4">
         <div className="w-8 h-8 border-4 border-brand-100 border-t-brand-600 rounded-full animate-spin"></div>
       </div>
     );
@@ -65,7 +65,7 @@ const App: React.FC = () => {
   // 加载 Vault 数据中
   if (vaultLoading && !vaultData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-[100dvh] flex items-center justify-center bg-slate-50 px-4">
         <div className="flex flex-col items-center space-y-4">
           <div className="w-10 h-10 border-4 border-brand-100 border-t-brand-600 rounded-full animate-spin"></div>
           <p className="text-slate-400 text-sm font-medium">加载数据中...</p>
@@ -77,7 +77,7 @@ const App: React.FC = () => {
   // 数据加载失败
   if (!vaultData) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
+      <div className="min-h-[100dvh] flex items-center justify-center bg-slate-50 px-4">
         <div className="text-center">
           <p className="text-slate-500 mb-4">{vaultError || '加载失败'}</p>
           <button
