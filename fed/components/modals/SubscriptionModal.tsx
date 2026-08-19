@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Subscription, Credential, FrequencyUnit } from '../../types';
 import { calculateNextRenewal } from '../../utils/subscription';
 import { api } from '../../services/api';
+import { ModalOverlay } from './ModalOverlay';
 
 interface Tag {
   id: string;
@@ -95,7 +96,7 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="sub-modal-title">
+    <ModalOverlay className="animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="sub-modal-title">
       <div className="modal-sheet max-w-[440px] md:animate-slide-up">
         <div className="p-5 md:p-7 border-b border-slate-50 flex justify-between items-center flex-shrink-0">
           <h3 id="sub-modal-title" className="text-lg font-bold text-slate-800 tracking-tight">
@@ -267,6 +268,6 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };

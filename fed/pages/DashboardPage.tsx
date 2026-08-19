@@ -16,6 +16,16 @@ import { SettingsPage } from './SettingsPage';
 import { PlusIcon, CreditCardIcon, KeyIcon, UploadIcon, BrainIcon, GridViewIcon, TableViewIcon } from '../components/Icons';
 import { CredentialTable } from '../components/CredentialTable';
 import { MemoPage } from './MemoPage';
+import { MobileBottomNav } from '../components/MobileBottomNav';
+
+const TAB_TITLES: Record<TabType, string> = {
+  subscriptions: '服务订阅',
+  credentials: '凭证管理',
+  memos: '备忘录',
+  analytics: '数据分析',
+  ai: '智能助手',
+  settings: '标签与通知',
+};
 
 interface DashboardPageProps {
   vaultData: VaultData;
@@ -65,6 +75,24 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [editingCredential, setEditingCredential] = useState<Partial<Credential> | null>(null);
   const [credViewMode, setCredViewMode] = useState<'card' | 'table'>('card');
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+
+  const handleTabChange = (tab: TabType) => {
+    setActiveTab(tab);
+    setIsMobileNavOpen(false);
+    setShowSubModal(false);
+    setEditingSubscription(null);
+    setAiParsedData(null);
+    setPendingAISubscriptions([]);
+    setShowAddCredModal(false);
+    setEditingCredential(null);
+    setShowImportModal(false);
+    setShowAISubModal(false);
+    setShowAICredModal(false);
+    setShowAICredPreview(false);
+    setAIParsedCredentials([]);
+    setShowCredentialDetail(false);
+    setSelectedCredential(null);
+  };
 
   const handleAddSubscription = () => {
     setEditingSubscription(null);
@@ -362,7 +390,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     <div className="mobile-app-shell flex h-screen bg-slate-50 font-sans overflow-hidden">
       <Sidebar
         activeTab={activeTab}
-        onTabChange={setActiveTab}
+        onTabChange={handleTabChange}
         subscriptionCount={vaultData.subscriptions.length}
         credentialCount={vaultData.credentials.length}
         memoCount={vaultData.memos?.length || 0}
@@ -374,7 +402,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       />
 
       <div className="mobile-content-shell flex min-w-0 flex-1 flex-col">
-        <header className="mobile-header hidden h-14 shrink-0 items-center justify-between border-b border-slate-200/60 bg-white px-4">
+        <header className="mobile-header flex md:hidden min-h-14 shrink-0 items-center justify-between border-b border-slate-200/60 bg-white px-4">
           <button
             type="button"
             aria-label="打开导航"
@@ -388,10 +416,17 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
               <span className="h-0.5 w-full bg-current" />
             </span>
           </button>
-          <span className="font-bold text-slate-900">SubVault</span>
+          <span className="font-bold text-slate-900">{TAB_TITLES[activeTab]}</span>
           <span className="h-10 w-10" aria-hidden="true" />
         </header>
-        {renderContent()}
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+          {renderContent()}
+        </div>
+        <MobileBottomNav
+          activeTab={activeTab}
+          onTabChange={handleTabChange}
+          onOpenMore={() => setIsMobileNavOpen(true)}
+        />
       </div>
 
       <SubscriptionModal

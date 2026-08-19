@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Credential, CREDENTIAL_CATEGORIES } from '../../types';
+import { ModalOverlay } from './ModalOverlay';
 
 interface AddCredentialModalProps {
   isOpen: boolean;
@@ -38,7 +39,7 @@ export const AddCredentialModal: React.FC<AddCredentialModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="add-cred-title">
+    <ModalOverlay className="animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="add-cred-title">
       <div className="modal-sheet max-w-[480px] md:animate-slide-up">
         <div className="p-5 md:p-7 border-b border-slate-50 flex justify-between items-center flex-shrink-0">
           <h3 id="add-cred-title" className="text-lg font-bold text-slate-800 tracking-tight">添加安全凭证</h3>
@@ -125,6 +126,6 @@ export const AddCredentialModal: React.FC<AddCredentialModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };

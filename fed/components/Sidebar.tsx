@@ -69,11 +69,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <button
           type="button"
           aria-label="关闭导航"
-          className="mobile-nav-backdrop fixed inset-0 z-30 bg-slate-900/30"
+          className="mobile-nav-backdrop fixed inset-0 z-40 bg-slate-900/30 md:hidden"
           onClick={onClose}
         />
       )}
-    <aside className={`mobile-sidebar w-56 flex flex-col bg-white border-r border-slate-200/60 z-40 ${isOpen ? 'is-open' : ''}`} aria-label="主导航">
+    <aside className={`mobile-sidebar hidden w-56 flex-col bg-white border-r border-slate-200/60 z-50 md:flex ${isOpen ? 'is-open' : ''}`} aria-label="主导航">
       <div className="p-5 flex items-center space-x-3">
         <div className="w-9 h-9 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-sm">
           <UnlockIcon className="w-5 h-5 text-white" />

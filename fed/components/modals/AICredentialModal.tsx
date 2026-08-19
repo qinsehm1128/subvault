@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Credential } from '../../types';
 import { api } from '../../services/api';
 import { BrainIcon, UploadIcon, SpinnerIcon } from '../Icons';
+import { ModalOverlay } from './ModalOverlay';
 
 interface AICredentialModalProps {
   isOpen: boolean;
@@ -200,7 +201,7 @@ export const AICredentialModal: React.FC<AICredentialModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay animate-fade-in">
+    <ModalOverlay className="animate-fade-in">
       <div className="modal-sheet max-w-2xl">
         <div className="p-5 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
           <div className="flex items-center space-x-3">
@@ -294,6 +295,6 @@ export const AICredentialModal: React.FC<AICredentialModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };

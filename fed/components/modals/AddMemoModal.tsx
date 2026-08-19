@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Memo, MEMO_CATEGORIES } from '../../types';
 import { validateMemo } from '../../utils/memoUtils';
+import { ModalOverlay } from './ModalOverlay';
 
 interface AddMemoModalProps {
   isOpen: boolean;
@@ -76,15 +77,15 @@ export const AddMemoModal: React.FC<AddMemoModalProps> = ({
   const submitButtonText = isEditMode ? '保存修改' : '确认添加';
 
   const modalContainerClass = isFullscreen
-    ? 'modal-overlay animate-fade-in !items-stretch'
-    : 'modal-overlay animate-fade-in';
+    ? 'animate-fade-in !items-stretch'
+    : 'animate-fade-in';
 
   const modalPanelClass = isFullscreen
     ? 'modal-sheet !max-h-none !h-full !rounded-none max-w-none'
     : 'modal-sheet max-w-[900px] md:animate-slide-up';
 
   return (
-    <div
+    <ModalOverlay
       className={modalContainerClass}
       role="dialog"
       aria-modal="true"
@@ -271,6 +272,6 @@ export const AddMemoModal: React.FC<AddMemoModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };

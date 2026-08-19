@@ -5,6 +5,7 @@ import { AddMemoModal } from '../components/modals/AddMemoModal';
 import { useMemoApi } from '../hooks/useMemoApi';
 import { filterByCategory, searchMemos } from '../utils/memoUtils';
 import { PlusIcon, MemoIcon } from '../components/Icons';
+import { ModalOverlay } from '../components/modals/ModalOverlay';
 
 // Search icon component
 const SearchIcon = ({ className }: { className?: string }) => (
@@ -243,8 +244,8 @@ export const MemoPage: React.FC<MemoPageProps> = ({
 
       {/* Delete Confirmation Dialog */}
       {showDeleteConfirm && (
-        <div 
-          className="modal-overlay animate-fade-in"
+        <ModalOverlay
+          className="animate-fade-in"
           role="dialog"
           aria-modal="true"
           aria-labelledby="delete-confirm-title"
@@ -273,7 +274,7 @@ export const MemoPage: React.FC<MemoPageProps> = ({
               </button>
             </div>
           </div>
-        </div>
+        </ModalOverlay>
       )}
     </main>
   );

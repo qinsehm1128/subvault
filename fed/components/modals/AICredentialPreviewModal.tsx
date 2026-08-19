@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Credential } from '../../types';
 import { BrainIcon, GlobeIcon, TagIcon, KeyIcon } from '../Icons';
+import { ModalOverlay } from './ModalOverlay';
 
 interface ParsedCredential extends Partial<Credential> {
   selected: boolean;
@@ -63,7 +64,7 @@ export const AICredentialPreviewModal: React.FC<AICredentialPreviewModalProps> =
   if (!isOpen || credentials.length === 0) return null;
 
   return (
-    <div className="modal-overlay animate-fade-in">
+    <ModalOverlay className="animate-fade-in">
       <div className="modal-sheet max-w-2xl">
         <div className="p-5 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
           <div className="flex items-center space-x-3">
@@ -156,6 +157,6 @@ export const AICredentialPreviewModal: React.FC<AICredentialPreviewModalProps> =
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };

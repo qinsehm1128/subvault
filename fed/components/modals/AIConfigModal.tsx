@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../../services/api';
+import { ModalOverlay } from './ModalOverlay';
 
 interface AIConfigModalProps {
   isOpen: boolean;
@@ -62,7 +63,7 @@ export const AIConfigModal: React.FC<AIConfigModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay animate-fade-in" role="dialog" aria-modal="true">
+    <ModalOverlay className="animate-fade-in" role="dialog" aria-modal="true">
       <div className="modal-sheet max-w-md md:animate-slide-up">
         <div className="p-5 md:p-7 border-b border-slate-50 flex justify-between items-center flex-shrink-0">
           <h3 className="text-lg font-bold text-slate-800 tracking-tight">AI 服务配置</h3>
@@ -147,6 +148,6 @@ export const AIConfigModal: React.FC<AIConfigModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };

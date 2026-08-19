@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Credential } from '../../types';
 import { KeyIcon, GlobeIcon, CopyIcon, CheckIcon, EyeIcon, EditIcon, TrashIcon } from '../Icons';
 import { copyToClipboard } from '../../utils/clipboard';
+import { ModalOverlay } from './ModalOverlay';
 
 interface CredentialDetailModalProps {
   isOpen: boolean;
@@ -122,7 +123,7 @@ export const CredentialDetailModal: React.FC<CredentialDetailModalProps> = ({
   };
 
   return (
-    <div className="modal-overlay animate-fade-in">
+    <ModalOverlay className="animate-fade-in">
       <div className="modal-sheet max-w-md">
         {/* 头部 */}
         <div className="p-5 border-b border-slate-100 flex-shrink-0">
@@ -197,6 +198,6 @@ export const CredentialDetailModal: React.FC<CredentialDetailModalProps> = ({
           </div>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };

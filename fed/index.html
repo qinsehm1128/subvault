@@ -123,17 +123,29 @@
       @media (max-width: 767px) {
         body { letter-spacing: 0; }
         .mobile-app-shell { height: 100dvh; }
-        .mobile-header { display: flex; }
+        .mobile-header {
+          display: flex !important;
+          padding-top: env(safe-area-inset-top, 0px);
+          min-height: calc(3.5rem + env(safe-area-inset-top, 0px));
+        }
+        .mobile-bottom-nav {
+          display: flex !important;
+          padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
         .mobile-sidebar {
           position: fixed;
           inset: 0 auto 0 0;
+          z-index: 50;
           width: min(18rem, 86vw);
           transform: translateX(-100%);
           transition: transform 0.2s ease-out;
           padding-bottom: env(safe-area-inset-bottom);
           overflow-y: auto;
         }
-        .mobile-sidebar.is-open { transform: translateX(0); }
+        .mobile-sidebar.is-open {
+          display: flex !important;
+          transform: translateX(0);
+        }
         .mobile-content-shell { width: 100%; }
 
         main[class*="px-8"],
@@ -221,6 +233,61 @@
       .memo-markdown-preview--compact ol { margin: 0.1em 0; }
       .memo-markdown-preview--compact pre { margin: 0.2em 0; padding: 0.4em 0.6em; }
       
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 80;
+        display: flex;
+        align-items: flex-end;
+        justify-content: center;
+        padding: 0;
+        background: rgba(15, 23, 42, 0.4);
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+      }
+      .modal-sheet {
+        width: 100%;
+        max-width: 100% !important;
+        max-height: min(92dvh, 100%);
+        min-height: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        border-radius: 1.25rem 1.25rem 0 0;
+        box-shadow: 0 24px 48px -16px rgba(15, 23, 42, 0.28);
+        padding-bottom: env(safe-area-inset-bottom, 0px);
+      }
+      .modal-sheet > .page-scroll,
+      .modal-sheet > [class*="overflow-y-auto"] {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: visible;
+      }
+      @media (min-width: 768px) {
+        .modal-overlay {
+          align-items: center;
+          padding: 1.5rem;
+        }
+        .modal-sheet {
+          max-width: none !important;
+          max-height: min(90dvh, 880px);
+          overflow: hidden;
+          border-radius: 1.5rem;
+          padding-bottom: 0;
+        }
+        .modal-sheet > .page-scroll,
+        .modal-sheet > [class*="overflow-y-auto"] {
+          overflow-y: auto;
+          overscroll-behavior: contain;
+        }
+      }
+
       /* Smooth animations with ease-out */
       .animate-slide-up {
         animation: slideUp 0.3s ease-out forwards;

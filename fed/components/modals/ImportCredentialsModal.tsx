@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Credential } from '../../types';
 import { UploadIcon } from '../Icons';
+import { ModalOverlay } from './ModalOverlay';
 
 interface ImportCredentialsModalProps {
   isOpen: boolean;
@@ -152,7 +153,7 @@ export const ImportCredentialsModal: React.FC<ImportCredentialsModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="modal-overlay animate-fade-in">
+    <ModalOverlay className="animate-fade-in">
       <div className="modal-sheet max-w-lg">
         <div className="p-5 border-b border-slate-100 flex justify-between items-center flex-shrink-0">
           <h3 className="text-base font-semibold text-slate-900">
@@ -252,6 +253,6 @@ export const ImportCredentialsModal: React.FC<ImportCredentialsModalProps> = ({
           )}
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };

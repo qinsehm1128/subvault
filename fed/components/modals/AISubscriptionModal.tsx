@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { api } from '../../services/api';
 import { BrainIcon, UploadIcon } from '../Icons';
+import { ModalOverlay } from './ModalOverlay';
 
 interface ParsedSubscription {
   name: string;
@@ -186,7 +187,7 @@ export const AISubscriptionModal: React.FC<AISubscriptionModalProps> = ({
   // 显示选择界面
   if (parsedResults && parsedResults.length > 1) {
     return (
-      <div className="modal-overlay animate-fade-in">
+      <ModalOverlay className="animate-fade-in">
         <div className="modal-sheet max-w-lg">
           {/* 头部 */}
           <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-violet-50 to-blue-50 flex-shrink-0">
@@ -281,12 +282,12 @@ export const AISubscriptionModal: React.FC<AISubscriptionModalProps> = ({
             </div>
           </div>
         </div>
-      </div>
+      </ModalOverlay>
     );
   }
 
   return (
-    <div className="modal-overlay animate-fade-in">
+    <ModalOverlay className="animate-fade-in">
       <div className="modal-sheet max-w-lg">
         {/* 头部 */}
         <div className="p-5 md:p-6 border-b border-slate-100 flex justify-between items-center bg-gradient-to-r from-violet-50 to-blue-50 flex-shrink-0">
@@ -415,6 +416,6 @@ export const AISubscriptionModal: React.FC<AISubscriptionModalProps> = ({
           </button>
         </div>
       </div>
-    </div>
+    </ModalOverlay>
   );
 };
