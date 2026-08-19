@@ -117,6 +117,9 @@
       }
       
       /* Focus visible states for keyboard navigation */
+      html.dark {
+        color-scheme: dark;
+      }
       html.dark body {
         background-color: #0f172a;
         color: #e2e8f0;
@@ -125,10 +128,19 @@
       html.dark .bg-slate-50, html.dark .bg-slate-50\/20, html.dark .bg-slate-50\/50 { background-color: #0f172a !important; }
       html.dark .bg-slate-100 { background-color: #1e293b !important; }
       html.dark .text-slate-900, html.dark .text-slate-800, html.dark .text-slate-700 { color: #f1f5f9 !important; }
-      html.dark .text-slate-600, html.dark .text-slate-500, html.dark .text-slate-400 { color: #94a3b8 !important; }
+      html.dark .text-slate-600, html.dark .text-slate-500, html.dark .text-slate-400, html.dark .text-slate-300 { color: #94a3b8 !important; }
       html.dark .border-slate-50, html.dark .border-slate-100, html.dark .border-slate-200, html.dark .border-slate-200\/60 { border-color: #334155 !important; }
       html.dark .glass-blur { background: rgba(15, 23, 42, 0.86); }
       html.dark ::-webkit-scrollbar-thumb { background: #334155; }
+      html.dark input,
+      html.dark select,
+      html.dark textarea {
+        color-scheme: dark;
+      }
+      html.dark input::placeholder,
+      html.dark textarea::placeholder {
+        color: #64748b;
+      }
       :focus-visible {
         outline: 2px solid #5850ec;
         outline-offset: 2px;
@@ -304,6 +316,47 @@
           overscroll-behavior: contain;
         }
       }
+      html.dark .modal-overlay {
+        background: rgba(2, 6, 23, 0.72);
+      }
+      html.dark .modal-sheet {
+        background: #1e293b;
+        color: #e2e8f0;
+        border: 1px solid #334155;
+        box-shadow: 0 24px 48px -16px rgba(0, 0, 0, 0.55);
+      }
+      html.dark .modal-sheet input,
+      html.dark .modal-sheet select,
+      html.dark .modal-sheet textarea {
+        background-color: #0f172a !important;
+        border-color: #334155 !important;
+        color: #f1f5f9 !important;
+      }
+      html.dark .modal-sheet input::placeholder,
+      html.dark .modal-sheet textarea::placeholder {
+        color: #64748b !important;
+      }
+      html.dark .modal-sheet option {
+        background-color: #1e293b;
+        color: #f1f5f9;
+      }
+      html.dark .modal-sheet input[type="date"]::-webkit-calendar-picker-indicator {
+        filter: invert(1);
+        opacity: 0.7;
+      }
+      html.dark .memo-markdown-preview h1,
+      html.dark .memo-markdown-preview h2 { color: #f1f5f9; }
+      html.dark .memo-markdown-preview h3,
+      html.dark .memo-markdown-preview h4,
+      html.dark .memo-markdown-preview h5,
+      html.dark .memo-markdown-preview h6 { color: #e2e8f0; }
+      html.dark .memo-markdown-preview code,
+      html.dark .memo-markdown-preview pre { background: #0f172a; color: #cbd5e1; }
+      html.dark .memo-markdown-preview blockquote { color: #94a3b8; border-left-color: #475569; }
+      html.dark .memo-markdown-preview th,
+      html.dark .memo-markdown-preview td { border-color: #334155; }
+      html.dark .memo-markdown-preview th { background: #0f172a; }
+      html.dark .memo-markdown-preview hr { border-top-color: #334155; }
 
       /* Smooth animations with ease-out */
       .animate-slide-up {
