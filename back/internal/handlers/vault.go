@@ -8,6 +8,7 @@ import (
 	"subvault/internal/crypto"
 	"subvault/internal/database"
 	"subvault/internal/models"
+	"subvault/internal/renewal"
 
 	"github.com/gin-gonic/gin"
 )
@@ -30,6 +31,7 @@ func (h *VaultHandler) GetVault(c *gin.Context) {
 
 	database.DB.Where("vault_id = ?", vaultID).Find(&credentials)
 	database.DB.Where("vault_id = ?", vaultID).Find(&subscriptions)
+	subscriptions = renewal.RotateAndSave(database.DB, subscriptions, renewal.Today())
 	database.DB.Where("vault_id = ?", vaultID).Find(&memos)
 
 	for i := range credentials {
@@ -73,6 +75,7 @@ func (h *VaultHandler) GetSubscriptions(c *gin.Context) {
 
 	var subscriptions []models.Subscription
 	database.DB.Where("vault_id = ?", vaultID).Find(&subscriptions)
+	subscriptions = renewal.RotateAndSave(database.DB, subscriptions, renewal.Today())
 
 	if subscriptions == nil {
 		subscriptions = []models.Subscription{}
@@ -116,7 +119,7 @@ func (h *VaultHandler) UpdateSubscription(c *gin.Context) {
 		return
 	}
 
-	database.DB.Model(&sub).Updates(map[string]interface{}{
+	if err := database.DB.Model(&sub).Updates(map[string]interface{}{
 		"name":             updateData.Name,
 		"cost":             updateData.Cost,
 		"currency":         updateData.Currency,
@@ -128,8 +131,13 @@ func (h *VaultHandler) UpdateSubscription(c *gin.Context) {
 		"credential_id":    updateData.CredentialID,
 		"website":          updateData.Website,
 		"active":           updateData.Active,
-	})
+		"auto_rotate":      updateData.AutoRotate,
+	}).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "更新订阅失败"})
+		return
+	}
 
+	database.DB.Where("id = ? AND vault_id = ?", subID, vaultID).First(&sub)
 	c.JSON(http.StatusOK, sub)
 }
 

@@ -34,6 +34,7 @@ func Init(dbPath string) error {
 		&models.Subscription{},
 		&models.Tag{},
 		&models.NotificationSetting{},
+		&models.WebhookDelivery{},
 		&models.AIConfig{},
 		&models.AIChat{},
 		&models.AIReport{},

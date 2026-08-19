@@ -318,11 +318,29 @@ class ApiService {
     return this.request<{
       enabled: boolean;
       daysBeforeList: string;
+      webhookEnabled: boolean;
+      webhookUrl: string;
+      webhookPlatform: string;
+      webhookDaysBefore: string;
     }>('/notifications/settings');
   }
 
-  async saveNotificationSettings(data: { enabled: boolean; daysBeforeList: string }) {
+  async saveNotificationSettings(data: {
+    enabled: boolean;
+    daysBeforeList: string;
+    webhookEnabled: boolean;
+    webhookUrl: string;
+    webhookPlatform: string;
+    webhookDaysBefore: string;
+  }) {
     return this.request<{ message: string }>('/notifications/settings', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async testWebhook(data: { webhookUrl: string; webhookPlatform: string }) {
+    return this.request<{ message: string }>('/notifications/webhook/test', {
       method: 'POST',
       body: JSON.stringify(data),
     });

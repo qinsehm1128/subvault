@@ -45,6 +45,7 @@ export const useVaultApi = () => {
       credentialId: newSub.credentialId || null,
       website: newSub.website || '',
       active: true,
+      autoRotate: !!newSub.autoRotate,
     };
 
     try {
@@ -79,13 +80,14 @@ export const useVaultApi = () => {
       credentialId: updates.credentialId || null,
       website: updates.website || '',
       active: updates.active !== false,
+      autoRotate: !!updates.autoRotate,
     };
 
     try {
       const updated = await api.updateSubscription(id, subData);
       setVaultData(prev => prev ? {
         ...prev,
-        subscriptions: prev.subscriptions.map(s => s.id === id ? { ...s, ...updated } : s),
+        subscriptions: prev.subscriptions.map(s => s.id === id ? { ...s, ...updated, ...subData, id } : s),
         lastUpdated: Date.now(),
       } : null);
     } catch (err: any) {

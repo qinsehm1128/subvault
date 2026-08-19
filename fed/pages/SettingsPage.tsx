@@ -37,6 +37,13 @@ export const SettingsPage: React.FC = () => {
   const [newTagColor, setNewTagColor] = useState(TAG_COLORS[0]);
   const [notifyEnabled, setNotifyEnabled] = useState(true);
   const [notifyDays, setNotifyDays] = useState('1,3,7');
+  const [webhookEnabled, setWebhookEnabled] = useState(false);
+  const [webhookUrl, setWebhookUrl] = useState('');
+  const [webhookPlatform, setWebhookPlatform] = useState('auto');
+  const [webhookDays, setWebhookDays] = useState('1,2,3');
+  const [webhookMessage, setWebhookMessage] = useState('');
+  const [webhookOk, setWebhookOk] = useState(true);
+  const [webhookBusy, setWebhookBusy] = useState(false);
   const [upcoming, setUpcoming] = useState<UpcomingRenewal[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -66,6 +73,10 @@ export const SettingsPage: React.FC = () => {
       setTags(tagsData);
       setNotifyEnabled(notifySettings.enabled);
       setNotifyDays(notifySettings.daysBeforeList);
+      setWebhookEnabled(!!notifySettings.webhookEnabled);
+      setWebhookUrl(notifySettings.webhookUrl || '');
+      setWebhookPlatform(notifySettings.webhookPlatform || 'auto');
+      setWebhookDays(notifySettings.webhookDaysBefore || '1,2,3');
       setUpcoming(upcomingData);
     } catch (err) {
       console.error('加载设置失败:', err);
@@ -117,10 +128,36 @@ export const SettingsPage: React.FC = () => {
       await api.saveNotificationSettings({
         enabled: notifyEnabled,
         daysBeforeList: notifyDays,
+        webhookEnabled,
+        webhookUrl,
+        webhookPlatform,
+        webhookDaysBefore: webhookDays,
       });
-      alert('设置已保存');
-    } catch (err) {
-      console.error('保存设置失败:', err);
+      setWebhookOk(true);
+      setWebhookMessage('设置已保存');
+    } catch (err: any) {
+      setWebhookOk(false);
+      setWebhookMessage(err.message || '保存设置失败');
+    }
+  };
+
+  const handleTestWebhook = async () => {
+    if (!webhookUrl.trim()) {
+      setWebhookOk(false);
+      setWebhookMessage('请先填写 Webhook 地址');
+      return;
+    }
+    setWebhookBusy(true);
+    setWebhookMessage('');
+    try {
+      const result = await api.testWebhook({ webhookUrl, webhookPlatform });
+      setWebhookOk(true);
+      setWebhookMessage(result.message || '测试消息已发送，请查看群聊');
+    } catch (err: any) {
+      setWebhookOk(false);
+      setWebhookMessage(err.message || '测试发送失败');
+    } finally {
+      setWebhookBusy(false);
     }
   };
 
@@ -333,6 +370,94 @@ export const SettingsPage: React.FC = () => {
                 >
                   保存设置
                 </button>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl border border-slate-200/60 p-5">
+              <h3 className="text-sm font-semibold text-slate-700 mb-1">外部 Webhook</h3>
+              <p className="text-xs text-slate-400 mb-4">到期前按设定天数每天推送一次，支持飞书、企业微信、钉钉机器人</p>
+              <div className="space-y-4">
+                <label
+                  className="flex items-center justify-between cursor-pointer"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    setWebhookEnabled(!webhookEnabled);
+                  }}
+                >
+                  <span className="text-sm text-slate-600">启用 Webhook 提醒</span>
+                  <div
+                    className={`w-11 h-6 rounded-full transition-colors ${
+                      webhookEnabled ? 'bg-blue-600' : 'bg-slate-200'
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5 ${
+                        webhookEnabled ? 'translate-x-5 ml-0.5' : 'translate-x-0.5'
+                      }`}
+                    />
+                  </div>
+                </label>
+
+                <div>
+                  <label className="text-sm text-slate-600 block mb-2">平台</label>
+                  <select
+                    value={webhookPlatform}
+                    onChange={e => setWebhookPlatform(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+                  >
+                    <option value="auto">自动识别</option>
+                    <option value="feishu">飞书 / Lark</option>
+                    <option value="wecom">企业微信</option>
+                    <option value="dingtalk">钉钉</option>
+                    <option value="generic">通用 JSON</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-sm text-slate-600 block mb-2">Webhook 地址</label>
+                  <input
+                    type="url"
+                    value={webhookUrl}
+                    onChange={e => setWebhookUrl(e.target.value)}
+                    placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/..."
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-sm text-slate-600 block mb-2">提前提醒天数</label>
+                  <input
+                    type="text"
+                    value={webhookDays}
+                    onChange={e => setWebhookDays(e.target.value)}
+                    placeholder="1,2,3"
+                    className="w-full bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 text-sm outline-none focus:border-blue-400"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">默认 1,2,3：到期前 3 天每天提醒一次。飞书自定义机器人请关闭签名校验。</p>
+                </div>
+
+                {webhookMessage && (
+                  <p className={`text-xs ${webhookOk ? 'text-emerald-600' : 'text-rose-600'}`}>
+                    {webhookMessage}
+                  </p>
+                )}
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    onClick={handleSaveNotifySettings}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors"
+                  >
+                    保存 Webhook
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleTestWebhook}
+                    disabled={webhookBusy || !webhookUrl.trim()}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium rounded-lg cursor-pointer transition-colors disabled:opacity-50"
+                  >
+                    {webhookBusy ? '发送中...' : '发送测试'}
+                  </button>
+                </div>
               </div>
             </div>
 

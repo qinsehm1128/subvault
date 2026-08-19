@@ -25,6 +25,7 @@ const defaultSub: Partial<Subscription> = {
   currency: 'CNY',
   startDate: new Date().toISOString().split('T')[0],
   category: '',
+  autoRotate: false,
 };
 
 export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
@@ -233,6 +234,32 @@ export const SubscriptionModal: React.FC<SubscriptionModalProps> = ({
               </div>
             )}
           </div>
+
+          {formData.frequencyUnit !== 'PERMANENT' && (
+            <label
+              className="flex items-start justify-between gap-4 cursor-pointer rounded-2xl border border-slate-100 bg-slate-50 p-4"
+              onClick={(e) => {
+                e.preventDefault();
+                setFormData({ ...formData, autoRotate: !formData.autoRotate });
+              }}
+            >
+              <div>
+                <p className="text-sm font-medium text-slate-700">到期自动轮转</p>
+                <p className="text-xs text-slate-400 mt-1">到期后自动进入下一周期，不再显示为过期</p>
+              </div>
+              <div
+                className={`w-11 h-6 rounded-full transition-colors flex-shrink-0 ${
+                  formData.autoRotate ? 'bg-blue-600' : 'bg-slate-200'
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 bg-white rounded-full shadow transition-transform mt-0.5 ${
+                    formData.autoRotate ? 'translate-x-5 ml-0.5' : 'translate-x-0.5'
+                  }`}
+                />
+              </div>
+            </label>
+          )}
 
           <div className="space-y-1.5">
             <label htmlFor="sub-credential" className="text-[11px] font-bold text-slate-400 uppercase tracking-widest ml-1">关联凭证 (可选)</label>

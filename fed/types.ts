@@ -28,6 +28,7 @@ export interface Subscription {
   credentialId?: string;
   website?: string;
   active: boolean;
+  autoRotate?: boolean;
 }
 
 export interface Memo {

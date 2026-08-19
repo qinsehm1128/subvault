@@ -50,9 +50,16 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             </div>
             <div className="min-w-0">
               <h3 className="font-semibold text-slate-900 text-[15px] truncate leading-tight">{sub.name}</h3>
-              <span className="inline-flex items-center px-2 py-0.5 mt-1 rounded-md text-[10px] font-medium bg-slate-100 text-slate-500">
-                {sub.category}
-              </span>
+              <div className="flex items-center gap-1.5 mt-1">
+                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-500">
+                  {sub.category}
+                </span>
+                {sub.autoRotate && sub.frequencyUnit !== 'PERMANENT' && (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-emerald-50 text-emerald-600">
+                    自动轮转
+                  </span>
+                )}
+              </div>
             </div>
           </div>
 

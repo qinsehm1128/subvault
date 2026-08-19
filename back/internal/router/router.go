@@ -109,6 +109,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 			// 通知设置
 			protected.GET("/notifications/settings", settingsHandler.GetNotificationSettings)
 			protected.POST("/notifications/settings", settingsHandler.SaveNotificationSettings)
+			protected.POST("/notifications/webhook/test", settingsHandler.TestWebhook)
 			protected.GET("/notifications/upcoming", settingsHandler.GetUpcomingRenewals)
 
 			// 数据分析

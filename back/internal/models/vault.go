@@ -58,6 +58,7 @@ type Subscription struct {
 	CredentialID    *string   `json:"credentialId,omitempty"`
 	Website         string    `json:"website,omitempty"`
 	Active          bool      `json:"active" gorm:"default:true"`
+	AutoRotate      bool      `json:"autoRotate" gorm:"default:false"` // 到期后自动进入下一周期
 	CreatedAt       time.Time `json:"createdAt"`
 	UpdatedAt       time.Time `json:"updatedAt"`
 	Tags            []Tag     `json:"tags,omitempty" gorm:"many2many:subscription_tags;"`
@@ -88,17 +89,38 @@ func (t *Tag) BeforeCreate(tx *gorm.DB) error {
 
 // NotificationSetting 通知设置
 type NotificationSetting struct {
+	ID                string    `json:"id" gorm:"primaryKey"`
+	VaultID           string    `json:"vaultId" gorm:"uniqueIndex;not null"`
+	Enabled           bool      `json:"enabled" gorm:"default:true"`
+	DaysBeforeList    string    `json:"daysBeforeList" gorm:"default:1,3,7"` // 应用内即将到期窗口
+	WebhookEnabled    bool      `json:"webhookEnabled" gorm:"default:false"`
+	WebhookURL        string    `json:"webhookUrl"`
+	WebhookPlatform   string    `json:"webhookPlatform" gorm:"default:auto"` // auto, feishu, wecom, dingtalk, generic
+	WebhookDaysBefore string    `json:"webhookDaysBefore" gorm:"default:1,2,3"`
+	CreatedAt         time.Time `json:"createdAt"`
+	UpdatedAt         time.Time `json:"updatedAt"`
+}
+
+// WebhookDelivery 避免同一订阅同一天重复推送
+type WebhookDelivery struct {
 	ID             string    `json:"id" gorm:"primaryKey"`
-	VaultID        string    `json:"vaultId" gorm:"uniqueIndex;not null"`
-	Enabled        bool      `json:"enabled" gorm:"default:true"`
-	DaysBeforeList string    `json:"daysBeforeList" gorm:"default:1,3,7"` // 提前几天提醒，逗号分隔
+	VaultID        string    `json:"vaultId" gorm:"uniqueIndex:idx_webhook_delivery;not null"`
+	SubscriptionID string    `json:"subscriptionId" gorm:"uniqueIndex:idx_webhook_delivery;not null"`
+	DaysLeft       int       `json:"daysLeft" gorm:"uniqueIndex:idx_webhook_delivery"`
+	SentDate       string    `json:"sentDate" gorm:"uniqueIndex:idx_webhook_delivery"` // Asia/Shanghai YYYY-MM-DD
 	CreatedAt      time.Time `json:"createdAt"`
-	UpdatedAt      time.Time `json:"updatedAt"`
 }
 
 func (n *NotificationSetting) BeforeCreate(tx *gorm.DB) error {
 	if n.ID == "" {
 		n.ID = uuid.New().String()
+	}
+	return nil
+}
+
+func (w *WebhookDelivery) BeforeCreate(tx *gorm.DB) error {
+	if w.ID == "" {
+		w.ID = uuid.New().String()
 	}
 	return nil
 }

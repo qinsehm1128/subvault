@@ -3,10 +3,13 @@ package handlers
 import (
 	"net/http"
 	"sort"
+	"strings"
 	"time"
 
 	"subvault/internal/database"
 	"subvault/internal/models"
+	"subvault/internal/renewal"
+	"subvault/internal/webhook"
 
 	"github.com/gin-gonic/gin"
 )
@@ -114,10 +117,13 @@ func (h *SettingsHandler) GetNotificationSettings(c *gin.Context) {
 	result := database.DB.Where("vault_id = ?", vaultID).First(&settings)
 
 	if result.Error != nil {
-		// 返回默认设置
 		c.JSON(http.StatusOK, gin.H{
-			"enabled":        true,
-			"daysBeforeList": "1,3,7",
+			"enabled":           true,
+			"daysBeforeList":    "1,3,7",
+			"webhookEnabled":    false,
+			"webhookUrl":        "",
+			"webhookPlatform":   "auto",
+			"webhookDaysBefore": "1,2,3",
 		})
 		return
 	}
@@ -129,12 +135,34 @@ func (h *SettingsHandler) SaveNotificationSettings(c *gin.Context) {
 	vaultID := c.GetString("vaultId")
 
 	var input struct {
-		Enabled        bool   `json:"enabled"`
-		DaysBeforeList string `json:"daysBeforeList"`
+		Enabled           bool   `json:"enabled"`
+		DaysBeforeList    string `json:"daysBeforeList"`
+		WebhookEnabled    bool   `json:"webhookEnabled"`
+		WebhookURL        string `json:"webhookUrl"`
+		WebhookPlatform   string `json:"webhookPlatform"`
+		WebhookDaysBefore string `json:"webhookDaysBefore"`
 	}
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "无效的设置数据"})
 		return
+	}
+
+	input.WebhookURL = strings.TrimSpace(input.WebhookURL)
+	if input.WebhookEnabled && input.WebhookURL == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "启用 Webhook 时请填写地址"})
+		return
+	}
+	if input.WebhookEnabled {
+		if err := webhook.ValidateURL(input.WebhookURL); err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		}
+	}
+	if input.WebhookPlatform == "" {
+		input.WebhookPlatform = "auto"
+	}
+	if input.WebhookDaysBefore == "" {
+		input.WebhookDaysBefore = "1,2,3"
 	}
 
 	var settings models.NotificationSetting
@@ -142,19 +170,48 @@ func (h *SettingsHandler) SaveNotificationSettings(c *gin.Context) {
 
 	if result.Error != nil {
 		settings = models.NotificationSetting{
-			VaultID:        vaultID,
-			Enabled:        input.Enabled,
-			DaysBeforeList: input.DaysBeforeList,
+			VaultID:           vaultID,
+			Enabled:           input.Enabled,
+			DaysBeforeList:    input.DaysBeforeList,
+			WebhookEnabled:    input.WebhookEnabled,
+			WebhookURL:        input.WebhookURL,
+			WebhookPlatform:   input.WebhookPlatform,
+			WebhookDaysBefore: input.WebhookDaysBefore,
 		}
 		database.DB.Create(&settings)
 	} else {
 		database.DB.Model(&settings).Updates(map[string]interface{}{
-			"enabled":          input.Enabled,
-			"days_before_list": input.DaysBeforeList,
+			"enabled":             input.Enabled,
+			"days_before_list":    input.DaysBeforeList,
+			"webhook_enabled":     input.WebhookEnabled,
+			"webhook_url":         input.WebhookURL,
+			"webhook_platform":    input.WebhookPlatform,
+			"webhook_days_before": input.WebhookDaysBefore,
 		})
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "设置已保存"})
+}
+
+func (h *SettingsHandler) TestWebhook(c *gin.Context) {
+	var input struct {
+		WebhookURL      string `json:"webhookUrl"`
+		WebhookPlatform string `json:"webhookPlatform"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请填写 Webhook 地址"})
+		return
+	}
+	input.WebhookURL = strings.TrimSpace(input.WebhookURL)
+	if input.WebhookURL == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请填写 Webhook 地址"})
+		return
+	}
+	if err := webhook.Send(input.WebhookURL, input.WebhookPlatform, webhook.BuildTestText()); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "测试消息已发送"})
 }
 
 // === 到期提醒 ===
@@ -173,21 +230,20 @@ func (h *SettingsHandler) GetUpcomingRenewals(c *gin.Context) {
 
 	var subscriptions []models.Subscription
 	database.DB.Where("vault_id = ? AND active = ?", vaultID, true).Find(&subscriptions)
+	subscriptions = renewal.RotateAndSave(database.DB, subscriptions, renewal.Today())
 
 	var upcoming []UpcomingRenewal
-	now := time.Now()
+	today := renewal.Today()
 
 	for _, sub := range subscriptions {
 		if sub.FrequencyUnit == "PERMANENT" {
 			continue
 		}
 
-		renewalDate, err := time.Parse("2006-01-02", sub.RenewalDate)
-		if err != nil {
+		daysLeft, ok := renewal.DaysUntil(sub.RenewalDate, today)
+		if !ok {
 			continue
 		}
-
-		daysLeft := int(renewalDate.Sub(now).Hours() / 24)
 		if daysLeft < 0 {
 			daysLeft = 0
 		}
@@ -252,6 +308,7 @@ func (h *SettingsHandler) GetAnalytics(c *gin.Context) {
 
 	var subscriptions []models.Subscription
 	database.DB.Where("vault_id = ? AND active = ?", vaultID, true).Find(&subscriptions)
+	subscriptions = renewal.RotateAndSave(database.DB, subscriptions, renewal.Today())
 
 	// 计算月度支出
 	categoryMap := make(map[string]float64)

@@ -6,6 +6,7 @@ import (
 
 	"subvault/internal/config"
 	"subvault/internal/database"
+	"subvault/internal/jobs"
 	"subvault/internal/router"
 )
 
@@ -17,6 +18,8 @@ func main() {
 	if err := database.Init(cfg.DatabasePath); err != nil {
 		log.Fatalf("Failed to initialize database: %v", err)
 	}
+
+	jobs.Start()
 
 	// 设置路由
 	r := router.Setup(cfg)
