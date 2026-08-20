@@ -24,6 +24,7 @@ func NewVaultHandler(cfg *config.Config) *VaultHandler {
 // GetVault 获取完整 Vault 数据
 func (h *VaultHandler) GetVault(c *gin.Context) {
 	vaultID := c.GetString("vaultId")
+	EnsureDefaultGroup(vaultID)
 
 	var credentials []models.Credential
 	var subscriptions []models.Subscription
@@ -94,6 +95,7 @@ func (h *VaultHandler) CreateSubscription(c *gin.Context) {
 	}
 
 	sub.VaultID = vaultID
+	sub.Category = ResolveGroupName(sub.Category)
 	sub.NormalizeStatus()
 
 	if err := database.DB.Create(&sub).Error; err != nil {
@@ -132,7 +134,7 @@ func (h *VaultHandler) UpdateSubscription(c *gin.Context) {
 		"frequency_unit":    updateData.FrequencyUnit,
 		"renewal_date":      updateData.RenewalDate,
 		"start_date":        updateData.StartDate,
-		"category":          updateData.Category,
+		"category":          ResolveGroupName(updateData.Category),
 		"credential_id":     updateData.CredentialID,
 		"website":           updateData.Website,
 		"active":            updateData.Active,
@@ -207,6 +209,7 @@ func (h *VaultHandler) CreateCredential(c *gin.Context) {
 	}
 
 	cred.VaultID = vaultID
+	cred.Category = ResolveGroupName(cred.Category)
 
 	if cred.Password != "" {
 		var err error
@@ -263,7 +266,7 @@ func (h *VaultHandler) UpdateCredential(c *gin.Context) {
 		"username": updateData.Username,
 		"label":    updateData.Label,
 		"website":  updateData.Website,
-		"category": updateData.Category,
+		"category": ResolveGroupName(updateData.Category),
 	}
 
 	if updateData.Password != "" {

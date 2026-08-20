@@ -73,6 +73,7 @@ func (h *MemoHandler) CreateMemo(c *gin.Context) {
 
 	// 设置 VaultID
 	memo.VaultID = vaultID
+	memo.Category = ResolveGroupName(memo.Category)
 
 	// 加密内容
 	if memo.Content != "" {
@@ -128,7 +129,7 @@ func (h *MemoHandler) UpdateMemo(c *gin.Context) {
 	// 准备更新数据
 	updates := map[string]interface{}{
 		"title":     updateData.Title,
-		"category":  updateData.Category,
+		"category":  ResolveGroupName(updateData.Category),
 		"is_pinned": updateData.IsPinned,
 	}
 

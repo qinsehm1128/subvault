@@ -28,14 +28,8 @@ func NewSettingsHandler() *SettingsHandler {
 
 func (h *SettingsHandler) GetTags(c *gin.Context) {
 	vaultID := c.GetString("vaultId")
-
-	var tags []models.Tag
-	database.DB.Where("vault_id = ?", vaultID).Order("created_at asc").Find(&tags)
-
-	if tags == nil {
-		tags = []models.Tag{}
-	}
-
+	EnsureDefaultGroup(vaultID)
+	tags := loadVaultTags(vaultID)
 	c.JSON(http.StatusOK, tags)
 }
 
@@ -46,8 +40,15 @@ func (h *SettingsHandler) CreateTag(c *gin.Context) {
 		Name  string `json:"name"`
 		Color string `json:"color"`
 	}
-	if err := c.ShouldBindJSON(&input); err != nil || input.Name == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "标签名称不能为空"})
+	if err := c.ShouldBindJSON(&input); err != nil || strings.TrimSpace(input.Name) == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "分组名称不能为空"})
+		return
+	}
+	input.Name = strings.TrimSpace(input.Name)
+
+	var existing models.Tag
+	if err := database.DB.Where("vault_id = ? AND name = ?", vaultID, input.Name).First(&existing).Error; err == nil {
+		c.JSON(http.StatusOK, existing)
 		return
 	}
 
@@ -88,8 +89,8 @@ func (h *SettingsHandler) UpdateTag(c *gin.Context) {
 	}
 
 	updates := map[string]interface{}{}
-	if input.Name != "" {
-		updates["name"] = input.Name
+	if input.Name != "" && tag.Name != DefaultGroupName {
+		updates["name"] = strings.TrimSpace(input.Name)
 	}
 	if input.Color != "" {
 		updates["color"] = input.Color
@@ -102,6 +103,16 @@ func (h *SettingsHandler) UpdateTag(c *gin.Context) {
 func (h *SettingsHandler) DeleteTag(c *gin.Context) {
 	vaultID := c.GetString("vaultId")
 	tagID := c.Param("id")
+
+	var tag models.Tag
+	if err := database.DB.Where("id = ? AND vault_id = ?", tagID, vaultID).First(&tag).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "分组不存在"})
+		return
+	}
+	if tag.Name == DefaultGroupName {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "默认分组不能删除"})
+		return
+	}
 
 	result := database.DB.Where("id = ? AND vault_id = ?", tagID, vaultID).Delete(&models.Tag{})
 	if result.RowsAffected == 0 {

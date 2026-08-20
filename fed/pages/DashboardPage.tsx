@@ -19,6 +19,7 @@ import { MemoPage } from './MemoPage';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { api } from '../services/api';
 import { passwordIssues } from '../utils/password';
+import { uniqueGroupNames } from '../utils/groups';
 
 const TAB_TITLES: Record<TabType, string> = {
   subscriptions: '服务订阅',
@@ -26,7 +27,7 @@ const TAB_TITLES: Record<TabType, string> = {
   memos: '备忘录',
   analytics: '数据分析',
   ai: '智能助手',
-  settings: '标签与通知',
+  settings: '分组与通知',
 };
 
 interface DashboardPageProps {
@@ -81,6 +82,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [subStatus, setSubStatus] = useState('all');
   const [subView, setSubView] = useState<'grid' | 'calendar'>('grid');
   const [credQuery, setCredQuery] = useState('');
+  const [credGroup, setCredGroup] = useState('all');
+  const [groups, setGroups] = useState<{ id: string; name: string; color: string }[]>([]);
   const [insights, setInsights] = useState<{ kind: string; title: string; detail: string }[]>([]);
 
   const filteredSubs = useMemo(() => {
@@ -94,15 +97,23 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   }, [vaultData.subscriptions, subQuery, subStatus]);
 
   const filteredCreds = useMemo(() => {
-    const q = credQuery.trim().toLowerCase();
-    if (!q) return vaultData.credentials;
-    return vaultData.credentials.filter(c => [c.label, c.username, c.website, c.category].some(v => (v || '').toLowerCase().includes(q)));
-  }, [vaultData.credentials, credQuery]);
+    return vaultData.credentials.filter(c => {
+      const group = (c.category || '').trim() || '默认';
+      if (credGroup !== 'all' && group !== credGroup) return false;
+      const q = credQuery.trim().toLowerCase();
+      if (!q) return true;
+      return [c.label, c.username, c.website, c.category].some(v => (v || '').toLowerCase().includes(q));
+    });
+  }, [vaultData.credentials, credQuery, credGroup]);
 
   useEffect(() => {
     if (activeTab !== 'subscriptions') return;
     api.getInsights().then(data => setInsights(data.insights || [])).catch(() => setInsights([]));
   }, [activeTab, vaultData.subscriptions.length]);
+
+  useEffect(() => {
+    api.getTags().then(setGroups).catch(() => setGroups([]));
+  }, [activeTab, vaultData.credentials.length, vaultData.subscriptions.length]);
 
   const weakPasswords = useMemo(() => {
     return vaultData.credentials.filter(c => passwordIssues(c.password).length > 0).length;
@@ -167,7 +178,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       frequencyAmount: data.frequencyAmount || 1,
       frequencyUnit: data.frequencyUnit || 'MONTHS',
       website: data.website || '',
-      category: data.category || '',
+      category: data.category || '默认',
     };
     setPendingAISubscriptions([]);
     setAiParsedData(parsedSub);
@@ -186,7 +197,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       frequencyAmount: data.frequencyAmount || 1,
       frequencyUnit: data.frequencyUnit || 'MONTHS',
       website: data.website || '',
-      category: data.category || '',
+      category: data.category || '默认',
     }));
 
     // 第一个立即显示，其余放入待处理队列
@@ -376,12 +387,24 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </button>
                       </div>
                     </div>
+                    <div className="flex flex-col md:flex-row gap-2">
                     <input
                       value={credQuery}
                       onChange={e => setCredQuery(e.target.value)}
-                      placeholder="搜索凭证名称、账号、网站"
-                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-400"
+                      placeholder="搜索凭证名称、账号、网站、密钥"
+                      className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-400"
                     />
+                    <select
+                      value={credGroup}
+                      onChange={e => setCredGroup(e.target.value)}
+                      className="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm"
+                    >
+                      <option value="all">全部分组</option>
+                      {uniqueGroupNames(groups, vaultData.credentials).map(name => (
+                        <option key={name} value={name}>{name}</option>
+                      ))}
+                    </select>
+                    </div>
                     <div className="flex items-center gap-2 overflow-x-auto">
                       <button
                         onClick={() => setShowAICredModal(true)}

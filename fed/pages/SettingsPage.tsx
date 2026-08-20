@@ -115,7 +115,8 @@ export const SettingsPage: React.FC = () => {
   };
 
   const handleDeleteTag = async (id: string) => {
-    if (!confirm('确定删除此标签？')) return;
+    if (tags.find(t => t.id === id)?.name === '默认') return;
+    if (!confirm('确定删除此分组？该分组下的内容不会删除。')) return;
     try {
       await api.deleteTag(id);
       setTags(prev => prev.filter(t => t.id !== id));
@@ -242,13 +243,13 @@ export const SettingsPage: React.FC = () => {
         {/* 头部 */}
         <div className="hidden md:block">
           <h2 className="text-2xl font-bold text-slate-900">设置</h2>
-          <p className="text-slate-400 text-sm mt-1">管理标签、通知提醒和安全设置</p>
+          <p className="text-slate-400 text-sm mt-1">管理分组、通知提醒和安全设置</p>
         </div>
 
         {/* 切换标签 */}
         <div className="flex space-x-1 bg-white rounded-lg p-1 border border-slate-200/60 w-full md:w-fit overflow-x-auto">
           {[
-            { key: 'tags', label: '标签管理' },
+            { key: 'tags', label: '分组管理' },
             { key: 'notifications', label: '到期提醒' },
             { key: 'security', label: '安全设置' },
           ].map(tab => (
@@ -271,13 +272,14 @@ export const SettingsPage: React.FC = () => {
           <div className="space-y-4">
             {/* 创建标签 */}
             <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <h3 className="text-sm font-semibold text-slate-700 mb-4">创建新标签</h3>
+              <h3 className="text-sm font-semibold text-slate-700 mb-1">创建分组</h3>
+              <p className="text-xs text-slate-400 mb-4">订阅、账号、密钥和备忘录共用同一套分组。不选择时归入「默认」，默认分组不能删除。</p>
               <div className="flex flex-col sm:flex-row sm:items-center gap-3">
                 <input
                   type="text"
                   value={newTagName}
                   onChange={e => setNewTagName(e.target.value)}
-                  placeholder="标签名称"
+                  placeholder="分组名称，如工作、密钥"
                   className="w-full sm:flex-1 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2.5 text-sm outline-none focus:border-blue-400 min-h-[44px]"
                   onKeyPress={e => e.key === 'Enter' && handleCreateTag()}
                 />
@@ -307,7 +309,7 @@ export const SettingsPage: React.FC = () => {
 
             {/* 标签列表 */}
             <div className="bg-white rounded-xl border border-slate-200/60 p-5">
-              <h3 className="text-sm font-semibold text-slate-700 mb-4">已有标签 ({tags.length})</h3>
+              <h3 className="text-sm font-semibold text-slate-700 mb-4">已有分组 ({tags.length})</h3>
               {tags.length > 0 ? (
                 <div className="flex flex-wrap gap-2">
                   {tags.map(tag => (
@@ -318,17 +320,19 @@ export const SettingsPage: React.FC = () => {
                     >
                       <div className="w-2 h-2 rounded-full" style={{ backgroundColor: tag.color }} />
                       <span className="text-sm font-medium" style={{ color: tag.color }}>{tag.name}</span>
+                      {tag.name !== '默认' && (
                       <button
                         onClick={() => handleDeleteTag(tag.id)}
                         className="opacity-100 md:opacity-0 md:group-hover:opacity-100 text-slate-400 hover:text-rose-500 cursor-pointer transition-all p-1"
                       >
                         <TrashIcon className="w-3 h-3" />
                       </button>
+                      )}
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-slate-400 text-sm text-center py-4">暂无标签，创建一个吧</p>
+                <p className="text-slate-400 text-sm text-center py-4">暂无分组，创建一个吧</p>
               )}
             </div>
           </div>

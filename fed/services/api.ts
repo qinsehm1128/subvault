@@ -217,6 +217,7 @@ class ApiService {
         notes?: string;
       }[];
       count: number;
+      newTags?: { id: string; name: string; color: string }[];
     }>('/ai/parse-credentials', {
       method: 'POST',
       body: JSON.stringify(data),

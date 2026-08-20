@@ -130,7 +130,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           active={activeTab === 'settings'} 
           onClick={() => changeTab('settings')}
           icon={<SettingsIcon className="w-4 h-4" />} 
-          label="标签与通知" 
+          label="分组与通知" 
         />
       </nav>
 

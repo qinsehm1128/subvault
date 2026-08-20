@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Memo, MEMO_CATEGORIES } from '../types';
+import { Memo } from '../types';
+import { api } from '../services/api';
+import { uniqueGroupNames, VaultGroup } from '../utils/groups';
 import { MemoCard } from '../components/MemoCard';
 import { AddMemoModal } from '../components/modals/AddMemoModal';
 import { useMemoApi } from '../hooks/useMemoApi';
@@ -39,11 +41,13 @@ export const MemoPage: React.FC<MemoPageProps> = ({
   const [editingMemo, setEditingMemo] = useState<Memo | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('全部');
+  const [groups, setGroups] = useState<VaultGroup[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
   // Load memos on mount
   useEffect(() => {
     loadMemos();
+    api.getTags().then(setGroups).catch(() => setGroups([]));
   }, [loadMemos]);
 
   // Filter and search memos
@@ -52,7 +56,7 @@ export const MemoPage: React.FC<MemoPageProps> = ({
     
     // Apply category filter
     if (selectedCategory !== '全部') {
-      result = filterByCategory(result, selectedCategory);
+      result = result.filter(m => ((m.category || '').trim() || '默认') === selectedCategory);
     }
     
     // Apply search filter
@@ -87,6 +91,7 @@ export const MemoPage: React.FC<MemoPageProps> = ({
       }
       setShowAddModal(false);
       setEditingMemo(undefined);
+      api.getTags().then(setGroups).catch(() => setGroups([]));
     } catch (err) {
       // Error is handled by useMemoApi
     }
@@ -110,7 +115,7 @@ export const MemoPage: React.FC<MemoPageProps> = ({
   };
 
   // Category options including "全部"
-  const categoryOptions = ['全部', ...MEMO_CATEGORIES];
+  const categoryOptions = ['全部', ...uniqueGroupNames(groups, memos)];
 
   return (
     <main className="flex-1 overflow-y-auto page-scroll px-4 py-5 md:px-8 md:py-8">

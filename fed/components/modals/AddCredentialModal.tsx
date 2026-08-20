@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Credential, CREDENTIAL_CATEGORIES } from '../../types';
+import { Credential } from '../../types';
 import { generatePassword } from '../../utils/password';
+import { GroupPicker } from '../GroupPicker';
 import { ModalOverlay } from './ModalOverlay';
 
 interface AddCredentialModalProps {
@@ -43,7 +44,7 @@ export const AddCredentialModal: React.FC<AddCredentialModalProps> = ({
     <ModalOverlay className="animate-fade-in" role="dialog" aria-modal="true" aria-labelledby="add-cred-title">
       <div className="modal-sheet max-w-[480px] md:animate-slide-up">
         <div className="p-5 md:p-7 border-b border-slate-50 flex justify-between items-center flex-shrink-0">
-          <h3 id="add-cred-title" className="text-lg font-bold text-slate-800 tracking-tight">添加安全凭证</h3>
+          <h3 id="add-cred-title" className="text-lg font-bold text-slate-800 tracking-tight">{initialData?.id ? '编辑账号 / 密钥' : '添加账号 / 密钥'}</h3>
           <button onClick={handleClose} className="text-slate-300 hover:text-slate-500 text-2xl cursor-pointer transition-colors duration-200" aria-label="关闭弹窗">&times;</button>
         </div>
         <div className="p-5 md:p-7 space-y-4 overflow-y-auto page-scroll flex-1 min-h-0">
@@ -59,7 +60,7 @@ export const AddCredentialModal: React.FC<AddCredentialModalProps> = ({
             />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="cred-username" className="text-xs font-medium text-slate-500">用户名 / 账号 *</label>
+            <label htmlFor="cred-username" className="text-xs font-medium text-slate-500">用户名 / 账号（密钥可留空）</label>
             <input
               id="cred-username"
               type="text"
@@ -70,7 +71,7 @@ export const AddCredentialModal: React.FC<AddCredentialModalProps> = ({
             />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="cred-password" className="text-xs font-medium text-slate-500">密码</label>
+            <label htmlFor="cred-password" className="text-xs font-medium text-slate-500">密码 / 密钥</label>
             <div className="flex gap-2">
             <input
               id="cred-password"
@@ -101,17 +102,11 @@ export const AddCredentialModal: React.FC<AddCredentialModalProps> = ({
             />
           </div>
           <div className="space-y-1.5">
-            <label htmlFor="cred-category" className="text-xs font-medium text-slate-500">分类</label>
-            <select
-              id="cred-category"
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-slate-800 focus:ring-2 focus:ring-emerald-500/10 focus:border-emerald-500 outline-none text-sm transition-colors duration-200 cursor-pointer"
-              value={newCred.category || '其他'}
-              onChange={e => setNewCred({...newCred, category: e.target.value})}
-            >
-              {CREDENTIAL_CATEGORIES.map(cat => (
-                <option key={cat} value={cat}>{cat}</option>
-              ))}
-            </select>
+            <label className="text-xs font-medium text-slate-500">分组</label>
+            <GroupPicker
+              value={newCred.category || '默认'}
+              onChange={name => setNewCred({ ...newCred, category: name })}
+            />
           </div>
           <div className="space-y-1.5">
             <label htmlFor="cred-notes" className="text-xs font-medium text-slate-500">备注</label>
@@ -129,7 +124,7 @@ export const AddCredentialModal: React.FC<AddCredentialModalProps> = ({
           <button onClick={handleClose} className="px-5 py-2.5 text-[12px] font-bold text-slate-400 hover:text-slate-600 uppercase tracking-widest cursor-pointer transition-colors duration-200 min-h-[44px]">取消</button>
           <button
             onClick={handleSubmit}
-            disabled={!newCred.label || !newCred.username}
+            disabled={!newCred.label || (!newCred.username && !newCred.password)}
             className="px-8 py-2.5 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white font-bold rounded-xl text-[12px] uppercase tracking-widest cursor-pointer disabled:cursor-not-allowed transition-colors duration-200 min-h-[44px]"
           >
             确认录入

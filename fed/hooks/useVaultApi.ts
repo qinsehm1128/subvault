@@ -41,7 +41,7 @@ export const useVaultApi = () => {
       frequencyUnit: unit,
       startDate: startDate,
       renewalDate: calculateNextRenewal(startDate, amount, unit),
-      category: newSub.category || '生活',
+      category: newSub.category || '默认',
       credentialId: newSub.credentialId || null,
       website: newSub.website || '',
       autoRotate: !!newSub.autoRotate,
@@ -84,7 +84,7 @@ export const useVaultApi = () => {
       frequencyUnit: unit,
       startDate: startDate,
       renewalDate: calculateNextRenewal(startDate, amount, unit),
-      category: updates.category || '生活',
+      category: updates.category || '默认',
       credentialId: updates.credentialId || null,
       website: updates.website || '',
       autoRotate: !!updates.autoRotate,
@@ -128,15 +128,15 @@ export const useVaultApi = () => {
   };
 
   const addCredential = async (newCred: Partial<Credential>) => {
-    if (!newCred.label || !newCred.username) return;
+    if (!newCred.label || (!newCred.username && !newCred.password)) return;
 
     const credData = {
       label: newCred.label,
-      username: newCred.username,
+      username: newCred.username || '',
       password: newCred.password || '',
       notes: newCred.notes || '',
       website: newCred.website || '',
-      category: newCred.category || '其他',
+      category: newCred.category || '默认',
     };
 
     try {
@@ -153,15 +153,15 @@ export const useVaultApi = () => {
   };
 
   const updateCredential = async (id: string, updates: Partial<Credential>) => {
-    if (!updates.label || !updates.username) return;
+    if (!updates.label || (!updates.username && !updates.password)) return;
 
     const credData = {
       label: updates.label,
-      username: updates.username,
+      username: updates.username || '',
       password: updates.password || '',
       notes: updates.notes || '',
       website: updates.website || '',
-      category: updates.category || '其他',
+      category: updates.category || '默认',
     };
 
     try {
@@ -191,7 +191,7 @@ export const useVaultApi = () => {
           password: cred.password || '',
           notes: cred.notes || '',
           website: cred.website || '',
-          category: cred.category || '其他',
+          category: cred.category || '默认',
         });
         results.push(created);
       } catch (err: any) {
@@ -256,7 +256,7 @@ export const useVaultApi = () => {
             frequencyUnit: sub.frequencyUnit || 'MONTHS',
             startDate: sub.startDate || new Date().toISOString().split('T')[0],
             renewalDate: sub.renewalDate || calculateNextRenewal(sub.startDate || new Date().toISOString().split('T')[0], sub.frequencyAmount || 1, sub.frequencyUnit || 'MONTHS'),
-            category: sub.category || '生活',
+            category: sub.category || '默认',
             autoRotate: !!sub.autoRotate,
             status: sub.status || (sub.active === false ? 'paused' : 'active'),
             paymentMethod: sub.paymentMethod || '',
@@ -281,7 +281,7 @@ export const useVaultApi = () => {
             password: cred.password || '',
             notes: cred.notes || '',
             website: cred.website || '',
-            category: cred.category || '其他',
+            category: cred.category || '默认',
           });
           newCredentials.push(created);
           results.credentials++;

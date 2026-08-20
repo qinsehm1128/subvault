@@ -564,17 +564,8 @@ func (h *AIHandler) ParseSubscription(c *gin.Context) {
 		return
 	}
 
-	// 获取现有标签
-	var existingTags []models.Tag
-	database.DB.Where("vault_id = ?", vaultID).Find(&existingTags)
-	var tagNames []string
-	for _, t := range existingTags {
-		tagNames = append(tagNames, t.Name)
-	}
-	tagsContext := ""
-	if len(tagNames) > 0 {
-		tagsContext = fmt.Sprintf("\n\n用户已有的分类标签: %s", strings.Join(tagNames, ", "))
-	}
+	existingTags := loadVaultTags(vaultID)
+	tagsContext := tagsContextLine(existingTags)
 
 	prompt := fmt.Sprintf(`请从以下内容中提取订阅服务信息。请务必使用**简体中文**回复，并严格按照 JSON 格式返回。
 
@@ -585,7 +576,7 @@ func (h *AIHandler) ParseSubscription(c *gin.Context) {
 4. frequencyAmount: 周期数量（默认 1）
 5. frequencyUnit: 周期单位（DAYS/WEEKS/MONTHS/YEARS/PERMANENT，默认 MONTHS）
 6. website: 网站地址（如果有）
-7. category: 分类标签（请根据服务类型智能推荐一个合适的分类，如：娱乐、工具、软件、学习、生活、工作、云服务、音乐、视频、游戏、存储、开发等）
+7. category: 分组名称（优先使用用户已有分组）
 %s
 
 如果内容中包含多个订阅，请返回数组格式。如果只有一个订阅，也返回数组格式。
@@ -620,57 +611,14 @@ func (h *AIHandler) ParseSubscription(c *gin.Context) {
 		return
 	}
 
-	// 处理每个订阅的分类标签
-	var newTags []models.Tag
-	tagColorIndex := len(existingTags)
-	colors := []string{"#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899", "#06B6D4", "#84CC16"}
+	newTags := applyCanonicalCategories(vaultID, "category", subscriptions)
 
-	for i := range subscriptions {
-		if category, ok := subscriptions[i]["category"].(string); ok && category != "" {
-			// 检查标签是否已存在（包括刚创建的）
-			tagExists := false
-			for _, t := range existingTags {
-				if t.Name == category {
-					tagExists = true
-					break
-				}
-			}
-			for _, t := range newTags {
-				if t.Name == category {
-					tagExists = true
-					break
-				}
-			}
-
-			if !tagExists {
-				// 创建新标签
-				newTag := models.Tag{
-					VaultID: vaultID,
-					Name:    category,
-					Color:   colors[tagColorIndex%len(colors)],
-				}
-				database.DB.Create(&newTag)
-				newTags = append(newTags, newTag)
-				tagColorIndex++
-			}
-		}
-	}
-
-	// 返回结果
 	result := gin.H{
 		"subscriptions": subscriptions,
 		"count":         len(subscriptions),
 	}
 	if len(newTags) > 0 {
-		var newTagsInfo []map[string]string
-		for _, t := range newTags {
-			newTagsInfo = append(newTagsInfo, map[string]string{
-				"id":    t.ID,
-				"name":  t.Name,
-				"color": t.Color,
-			})
-		}
-		result["newTags"] = newTagsInfo
+		result["newTags"] = tagsAsJSON(newTags)
 	}
 
 	c.JSON(http.StatusOK, result)
@@ -926,36 +874,39 @@ func (h *AIHandler) ParseCredentials(c *gin.Context) {
 		return
 	}
 
-	// 构建 AI 解析提示
-	prompt := fmt.Sprintf(`请从以下内容中提取账号凭据信息。请务必使用**简体中文**回复，并严格按照 JSON 格式返回。
+	existingTags := loadVaultTags(vaultID)
+	tagsContext := tagsContextLine(existingTags)
+
+	prompt := fmt.Sprintf(`请从以下内容中提取账号、密码或密钥信息。请务必使用**简体中文**回复，并严格按照 JSON 格式返回。
 
 需要提取的信息：
 1. label: 服务/网站名称（必填，如"GitHub"、"淘宝"等）
-2. username: 用户名/账号/邮箱（必填）
-3. password: 密码（如果有）
+2. username: 用户名/账号/邮箱（账号类必填；纯密钥可填服务名或留空字符串）
+3. password: 密码或密钥（如果有）
 4. website: 网站地址（如果有，格式如 https://xxx.com）
-5. category: 分类（请智能推荐，如：社交、购物、工作、娱乐、开发、金融、教育、其他等）
+5. category: 分组名称（优先使用用户已有分组）
 6. notes: 备注信息（如有额外信息可放在这里）
+%s
 
 原始文件：%s（类型：%s）
 
-如果内容中包含多个账号，请返回数组格式。如果只有一个账号，也返回数组格式。
+如果内容中包含多条账号或密钥，请返回数组格式。如果只有一条，也返回数组格式。
 请严格按照以下 JSON 数组格式返回（不要包含任何其他文字）:
 [
   {
     "label": "服务名称",
     "username": "用户名",
-    "password": "密码或空字符串",
+    "password": "密码、密钥或空字符串",
     "website": "网站地址或空字符串",
-    "category": "分类",
+    "category": "分组名称",
     "notes": "备注或空字符串"
   }
 ]
 
-如果无法识别某些信息，请使用合理的默认值。如果完全无法提取账号信息，返回空数组 []。
+如果无法识别某些信息，请使用合理的默认值。如果完全无法提取，返回空数组 []。
 
 用户提供的内容:
-%s`, input.FileName, input.FileType, input.Text)
+%s`, tagsContext, input.FileName, input.FileType, input.Text)
 
 	// 调用 AI 解析
 	messages := []openAIMessage{
@@ -992,8 +943,13 @@ func (h *AIHandler) ParseCredentials(c *gin.Context) {
 		}
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	newTags := applyCanonicalCategories(vaultID, "category", credentials)
+	result := gin.H{
 		"credentials": credentials,
 		"count":       len(credentials),
-	})
+	}
+	if len(newTags) > 0 {
+		result["newTags"] = tagsAsJSON(newTags)
+	}
+	c.JSON(http.StatusOK, result)
 }

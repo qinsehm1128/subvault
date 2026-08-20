@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { Memo, MEMO_CATEGORIES } from '../../types';
+import { Memo } from '../../types';
 import { validateMemo } from '../../utils/memoUtils';
+import { GroupPicker } from '../GroupPicker';
 import { ModalOverlay } from './ModalOverlay';
 
 interface AddMemoModalProps {
@@ -23,7 +24,7 @@ export const AddMemoModal: React.FC<AddMemoModalProps> = ({
   const [formData, setFormData] = useState<Partial<Memo>>({
     title: '',
     content: '',
-    category: '其他'
+    category: '默认'
   });
   const [error, setError] = useState<string>('');
   const [activeTab, setActiveTab] = useState<EditorTab>('edit');
@@ -42,7 +43,7 @@ export const AddMemoModal: React.FC<AddMemoModalProps> = ({
         setFormData({
           title: '',
           content: '',
-          category: '其他'
+          category: '默认'
         });
       }
       setError('');
@@ -59,13 +60,13 @@ export const AddMemoModal: React.FC<AddMemoModalProps> = ({
     }
 
     onSave(formData);
-    setFormData({ title: '', content: '', category: '其他' });
+    setFormData({ title: '', content: '', category: '默认' });
     setError('');
     onClose();
   };
 
   const handleClose = () => {
-    setFormData({ title: '', content: '', category: '其他' });
+    setFormData({ title: '', content: '', category: '默认' });
     setError('');
     onClose();
   };
@@ -238,21 +239,11 @@ export const AddMemoModal: React.FC<AddMemoModalProps> = ({
 
           {/* Category Select */}
           <div className="space-y-1.5">
-            <label htmlFor="memo-category" className="text-sm font-medium text-slate-600">
-              分类
-            </label>
-            <select
-              id="memo-category"
-              className="w-full bg-slate-50 border border-slate-100 rounded-xl p-4 text-slate-800 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none font-medium text-sm transition-colors duration-200 cursor-pointer"
-              value={formData.category || '其他'}
-              onChange={e => setFormData({...formData, category: e.target.value})}
-            >
-              {MEMO_CATEGORIES.map(category => (
-                <option key={category} value={category}>
-                  {category}
-                </option>
-              ))}
-            </select>
+            <label className="text-sm font-medium text-slate-600">分组</label>
+            <GroupPicker
+              value={formData.category || '默认'}
+              onChange={name => setFormData({ ...formData, category: name })}
+            />
           </div>
         </div>
 

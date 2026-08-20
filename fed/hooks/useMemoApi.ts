@@ -29,7 +29,7 @@ export const useMemoApi = () => {
     const memoData = {
       title: memo.title.trim(),
       content: memo.content.trim(),
-      category: memo.category || '其他',
+      category: memo.category || '默认',
       isPinned: memo.isPinned || false,
     };
 

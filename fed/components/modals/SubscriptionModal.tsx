@@ -24,7 +24,7 @@ const defaultSub: Partial<Subscription> = {
   frequencyUnit: 'MONTHS',
   currency: 'CNY',
   startDate: new Date().toISOString().split('T')[0],
-  category: '',
+  category: '默认',
   autoRotate: false,
   status: 'active',
 };
