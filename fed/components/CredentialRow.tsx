@@ -2,27 +2,18 @@ import React, { useState } from 'react';
 import { Credential } from '../types';
 import { KeyIcon, EyeIcon, TrashIcon, EditIcon, GlobeIcon } from './Icons';
 import { copyToClipboard } from '../utils/clipboard';
+import { GroupBadge } from './GroupBadge';
+import { VaultGroup } from '../utils/groups';
 
 interface CredentialRowProps {
   credential: Credential;
+  groups?: VaultGroup[];
   onDelete: () => void;
   onEdit?: () => void;
   onClick?: () => void;
 }
 
-// 分类颜色映射
-const categoryColors: Record<string, string> = {
-  '社交': 'bg-pink-100 text-pink-700',
-  '购物': 'bg-orange-100 text-orange-700',
-  '工作': 'bg-blue-100 text-blue-700',
-  '娱乐': 'bg-purple-100 text-purple-700',
-  '开发': 'bg-emerald-100 text-emerald-700',
-  '金融': 'bg-yellow-100 text-yellow-700',
-  '教育': 'bg-cyan-100 text-cyan-700',
-  '其他': 'bg-slate-100 text-slate-600',
-};
-
-export const CredentialRow: React.FC<CredentialRowProps> = ({ credential: cred, onDelete, onEdit, onClick }) => {
+export const CredentialRow: React.FC<CredentialRowProps> = ({ credential: cred, groups = [], onDelete, onEdit, onClick }) => {
   const [revealed, setRevealed] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -33,10 +24,6 @@ export const CredentialRow: React.FC<CredentialRowProps> = ({ credential: cred, 
       setCopiedField(field);
       setTimeout(() => setCopiedField(null), 2000);
     }
-  };
-
-  const getCategoryColor = (category?: string) => {
-    return categoryColors[category || '其他'] || categoryColors['其他'];
   };
 
   return (
@@ -56,11 +43,9 @@ export const CredentialRow: React.FC<CredentialRowProps> = ({ credential: cred, 
             </div>
             <div className="min-w-0">
               <h3 className="font-semibold text-slate-900 text-[15px] truncate leading-tight">{cred.label}</h3>
-              {cred.category && (
-                <span className={`inline-flex items-center px-2 py-0.5 mt-1 rounded-md text-[10px] font-medium ${getCategoryColor(cred.category)}`}>
-                  {cred.category}
-                </span>
-              )}
+              <div className="mt-1">
+                <GroupBadge name={cred.category} groups={groups} />
+              </div>
             </div>
           </div>
 

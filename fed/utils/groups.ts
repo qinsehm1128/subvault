@@ -22,6 +22,19 @@ export function resolveGroupName(name?: string): string {
   return trimmed || DEFAULT_GROUP;
 }
 
+export function groupColor(groups: VaultGroup[], name?: string): string {
+  return findGroup(groups, resolveGroupName(name))?.color || '#64748B';
+}
+
+export function groupCounts(items: Array<{ category?: string }>): Record<string, number> {
+  const counts: Record<string, number> = {};
+  items.forEach(item => {
+    const name = resolveGroupName(item.category);
+    counts[name] = (counts[name] || 0) + 1;
+  });
+  return counts;
+}
+
 export function uniqueGroupNames(groups: VaultGroup[], used: Array<{ category?: string }>): string[] {
   const names = new Set<string>();
   names.add(DEFAULT_GROUP);

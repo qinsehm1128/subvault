@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Memo } from '../types';
 import { api } from '../services/api';
-import { uniqueGroupNames, VaultGroup } from '../utils/groups';
+import { VaultGroup } from '../utils/groups';
+import { GroupFilter } from '../components/GroupFilter';
 import { MemoCard } from '../components/MemoCard';
 import { AddMemoModal } from '../components/modals/AddMemoModal';
 import { useMemoApi } from '../hooks/useMemoApi';
-import { filterByCategory, searchMemos } from '../utils/memoUtils';
+import { searchMemos } from '../utils/memoUtils';
 import { PlusIcon, MemoIcon } from '../components/Icons';
 import { ModalOverlay } from '../components/modals/ModalOverlay';
 
@@ -14,13 +15,6 @@ const SearchIcon = ({ className }: { className?: string }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <circle cx="11" cy="11" r="8"/>
     <path d="m21 21-4.3-4.3"/>
-  </svg>
-);
-
-// Chevron down icon for dropdown
-const ChevronDownIcon = ({ className }: { className?: string }) => (
-  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
-    <path d="m6 9 6 6 6-6"/>
   </svg>
 );
 
@@ -40,7 +34,7 @@ export const MemoPage: React.FC<MemoPageProps> = ({
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingMemo, setEditingMemo] = useState<Memo | undefined>(undefined);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('全部');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [groups, setGroups] = useState<VaultGroup[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
 
@@ -55,7 +49,7 @@ export const MemoPage: React.FC<MemoPageProps> = ({
     let result = memos;
     
     // Apply category filter
-    if (selectedCategory !== '全部') {
+    if (selectedCategory !== 'all') {
       result = result.filter(m => ((m.category || '').trim() || '默认') === selectedCategory);
     }
     
@@ -115,8 +109,6 @@ export const MemoPage: React.FC<MemoPageProps> = ({
   };
 
   // Category options including "全部"
-  const categoryOptions = ['全部', ...uniqueGroupNames(groups, memos)];
-
   return (
     <main className="flex-1 overflow-y-auto page-scroll px-4 py-5 md:px-8 md:py-8">
       <div className="mx-auto">
@@ -150,24 +142,7 @@ export const MemoPage: React.FC<MemoPageProps> = ({
           )}
 
           {/* Filter and Search Bar */}
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Category Filter Dropdown */}
-            <div className="relative">
-              <select
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                className="appearance-none bg-white border border-slate-200 rounded-xl px-4 py-2.5 pr-10 text-sm font-medium text-slate-700 focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 outline-none cursor-pointer transition-colors duration-200 min-w-[140px]"
-              >
-                {categoryOptions.map(category => (
-                  <option key={category} value={category}>
-                    {category}
-                  </option>
-                ))}
-              </select>
-              <ChevronDownIcon className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-            </div>
-
-            {/* Search Input */}
+          <div className="flex flex-col gap-3">
             <div className="relative flex-1">
               <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
@@ -186,6 +161,7 @@ export const MemoPage: React.FC<MemoPageProps> = ({
                 </button>
               )}
             </div>
+            <GroupFilter value={selectedCategory} onChange={setSelectedCategory} groups={groups} items={memos} />
           </div>
 
           {/* Loading State */}
@@ -203,6 +179,7 @@ export const MemoPage: React.FC<MemoPageProps> = ({
                 <MemoCard
                   key={memo.id}
                   memo={memo}
+                  groups={groups}
                   onEdit={() => handleEditMemo(memo)}
                   onDelete={() => setShowDeleteConfirm(memo.id)}
                 />
@@ -228,8 +205,8 @@ export const MemoPage: React.FC<MemoPageProps> = ({
                 <>
                   <p className="text-slate-400 font-medium text-sm mb-1">未找到匹配的备忘录</p>
                   <p className="text-slate-300 text-xs">
-                    {selectedCategory !== '全部' && `分类: ${selectedCategory}`}
-                    {selectedCategory !== '全部' && searchTerm && ' · '}
+                    {selectedCategory !== 'all' && `分组: ${selectedCategory}`}
+                    {selectedCategory !== 'all' && searchTerm && ' · '}
                     {searchTerm && `搜索: "${searchTerm}"`}
                   </p>
                 </>

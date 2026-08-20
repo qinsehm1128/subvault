@@ -3,6 +3,8 @@ import { Subscription, Credential } from '../types';
 import { TrashIcon, KeyIcon, EditIcon, RefreshIcon } from './Icons';
 import { getDaysRemaining, getCycleProgress, formatCurrency, formatFrequency } from '../utils/subscription';
 import { logoUrl } from '../utils/logo';
+import { GroupBadge } from './GroupBadge';
+import { VaultGroup } from '../utils/groups';
 
 interface SubscriptionCardProps {
   subscription: Subscription;
@@ -11,6 +13,7 @@ interface SubscriptionCardProps {
   onDelete: () => void;
   onRefresh?: () => void;
   onOpenCredential?: () => void;
+  groups?: VaultGroup[];
 }
 
 export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
@@ -20,6 +23,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
   onDelete,
   onRefresh,
   onOpenCredential,
+  groups = [],
 }) => {
   const daysLeft = getDaysRemaining(sub.renewalDate);
   const progress = getCycleProgress(sub.startDate, sub.renewalDate);
@@ -67,9 +71,7 @@ export const SubscriptionCard: React.FC<SubscriptionCardProps> = ({
             <div className="min-w-0">
               <h3 className="font-semibold text-slate-900 text-[15px] truncate leading-tight">{sub.name}</h3>
               <div className="flex items-center gap-1.5 mt-1">
-                <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-500">
-                  {sub.category}
-                </span>
+                <GroupBadge name={sub.category} groups={groups} />
                 {status !== 'active' && (
                   <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-slate-100 text-slate-500">
                     {statusLabel[status] || status}

@@ -3,30 +3,22 @@ import { Credential } from '../../types';
 import { KeyIcon, GlobeIcon, CopyIcon, CheckIcon, EyeIcon, EditIcon, TrashIcon } from '../Icons';
 import { copyToClipboard } from '../../utils/clipboard';
 import { ModalOverlay } from './ModalOverlay';
+import { GroupBadge } from '../GroupBadge';
+import { VaultGroup } from '../../utils/groups';
 
 interface CredentialDetailModalProps {
   isOpen: boolean;
   credential: Credential | null;
+  groups?: VaultGroup[];
   onClose: () => void;
   onEdit?: (credential: Credential) => void;
   onDelete?: (id: string) => void;
 }
 
-// 分类颜色映射
-const categoryColors: Record<string, string> = {
-  '社交': 'bg-pink-100 text-pink-700 border-pink-200',
-  '购物': 'bg-orange-100 text-orange-700 border-orange-200',
-  '工作': 'bg-blue-100 text-blue-700 border-blue-200',
-  '娱乐': 'bg-purple-100 text-purple-700 border-purple-200',
-  '开发': 'bg-emerald-100 text-emerald-700 border-emerald-200',
-  '金融': 'bg-yellow-100 text-yellow-700 border-yellow-200',
-  '教育': 'bg-cyan-100 text-cyan-700 border-cyan-200',
-  '其他': 'bg-slate-100 text-slate-600 border-slate-200',
-};
-
 export const CredentialDetailModal: React.FC<CredentialDetailModalProps> = ({
   isOpen,
   credential,
+  groups = [],
   onClose,
   onEdit,
   onDelete
@@ -42,10 +34,6 @@ export const CredentialDetailModal: React.FC<CredentialDetailModalProps> = ({
       setCopiedField(field);
       setTimeout(() => setCopiedField(null), 2000);
     }
-  };
-
-  const getCategoryColor = (category?: string) => {
-    return categoryColors[category || '其他'] || categoryColors['其他'];
   };
 
   const handleEdit = () => {
@@ -134,11 +122,9 @@ export const CredentialDetailModal: React.FC<CredentialDetailModalProps> = ({
               </div>
               <div className="min-w-0">
                 <h3 className="text-lg font-bold text-slate-900 truncate">{credential.label}</h3>
-                {credential.category && (
-                  <span className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-md font-medium border ${getCategoryColor(credential.category)}`}>
-                    {credential.category}
-                  </span>
-                )}
+                <div className="mt-1">
+                  <GroupBadge name={credential.category} groups={groups} />
+                </div>
               </div>
             </div>
             <button

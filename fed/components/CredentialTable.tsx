@@ -2,31 +2,24 @@ import React, { useState } from 'react';
 import { Credential } from '../types';
 import { EyeIcon, EditIcon, TrashIcon, GlobeIcon } from './Icons';
 import { copyToClipboard } from '../utils/clipboard';
+import { GroupBadge } from './GroupBadge';
+import { VaultGroup } from '../utils/groups';
 
 interface CredentialTableProps {
   credentials: Credential[];
+  groups?: VaultGroup[];
   onCredentialClick: (cred: Credential) => void;
   onEdit: (cred: Credential) => void;
   onDelete: (id: string) => void;
 }
 
-const categoryColors: Record<string, string> = {
-  '社交': 'bg-pink-100 text-pink-700',
-  '购物': 'bg-orange-100 text-orange-700',
-  '工作': 'bg-blue-100 text-blue-700',
-  '娱乐': 'bg-purple-100 text-purple-700',
-  '开发': 'bg-emerald-100 text-emerald-700',
-  '金融': 'bg-yellow-100 text-yellow-700',
-  '教育': 'bg-cyan-100 text-cyan-700',
-  '其他': 'bg-slate-100 text-slate-600',
-};
-
 const TableRow: React.FC<{
   cred: Credential;
+  groups: VaultGroup[];
   onClick: () => void;
   onEdit: () => void;
   onDelete: () => void;
-}> = ({ cred, onClick, onEdit, onDelete }) => {
+}> = ({ cred, groups, onClick, onEdit, onDelete }) => {
   const [revealed, setRevealed] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -39,8 +32,6 @@ const TableRow: React.FC<{
     }
   };
 
-  const catColor = categoryColors[cred.category || '其他'] || categoryColors['其他'];
-
   return (
     <tr
       className="group hover:bg-blue-50/50 cursor-pointer transition-colors duration-150"
@@ -50,11 +41,7 @@ const TableRow: React.FC<{
       <td className="px-4 py-3">
         <div className="flex items-center space-x-2">
           <span className="text-sm font-medium text-slate-900 truncate">{cred.label}</span>
-          {cred.category && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium whitespace-nowrap ${catColor}`}>
-              {cred.category}
-            </span>
-          )}
+          <GroupBadge name={cred.category} groups={groups} />
         </div>
       </td>
 
@@ -139,6 +126,7 @@ const TableRow: React.FC<{
 
 export const CredentialTable: React.FC<CredentialTableProps> = ({
   credentials,
+  groups = [],
   onCredentialClick,
   onEdit,
   onDelete,
@@ -160,6 +148,7 @@ export const CredentialTable: React.FC<CredentialTableProps> = ({
             <TableRow
               key={cred.id}
               cred={cred}
+              groups={groups}
               onClick={() => onCredentialClick(cred)}
               onEdit={() => onEdit(cred)}
               onDelete={() => onDelete(cred.id)}

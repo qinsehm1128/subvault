@@ -19,7 +19,7 @@ import { MemoPage } from './MemoPage';
 import { MobileBottomNav } from '../components/MobileBottomNav';
 import { api } from '../services/api';
 import { passwordIssues } from '../utils/password';
-import { uniqueGroupNames } from '../utils/groups';
+import { GroupFilter } from '../components/GroupFilter';
 
 const TAB_TITLES: Record<TabType, string> = {
   subscriptions: '服务订阅',
@@ -80,6 +80,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
   const [subQuery, setSubQuery] = useState('');
   const [subStatus, setSubStatus] = useState('all');
+  const [subGroup, setSubGroup] = useState('all');
   const [subView, setSubView] = useState<'grid' | 'calendar'>('grid');
   const [credQuery, setCredQuery] = useState('');
   const [credGroup, setCredGroup] = useState('all');
@@ -90,11 +91,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     return vaultData.subscriptions.filter(sub => {
       const status = sub.status || (sub.active === false ? 'paused' : 'active');
       if (subStatus !== 'all' && status !== subStatus) return false;
+      const group = (sub.category || '').trim() || '默认';
+      if (subGroup !== 'all' && group !== subGroup) return false;
       const q = subQuery.trim().toLowerCase();
       if (!q) return true;
       return [sub.name, sub.category, sub.website, sub.paymentMethod, sub.cardLast4].some(v => (v || '').toLowerCase().includes(q));
     });
-  }, [vaultData.subscriptions, subQuery, subStatus]);
+  }, [vaultData.subscriptions, subQuery, subStatus, subGroup]);
 
   const filteredCreds = useMemo(() => {
     return vaultData.credentials.filter(c => {
@@ -319,6 +322,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       <button onClick={() => setSubView('calendar')} className={`px-3 py-2 text-xs rounded-lg ${subView === 'calendar' ? 'bg-white text-blue-600' : 'text-slate-500'}`}>日历</button>
                     </div>
                   </div>
+                  <GroupFilter value={subGroup} onChange={setSubGroup} groups={groups} items={vaultData.subscriptions} />
                   
                   {subView === 'calendar' ? (
                     <RenewalCalendar subscriptions={filteredSubs} onEdit={handleEditSubscription} />
@@ -329,6 +333,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         key={sub.id}
                         subscription={sub}
                         linkedCredential={vaultData.credentials.find(c => c.id === sub.credentialId)}
+                        groups={groups}
                         onEdit={() => handleEditSubscription(sub)}
                         onDelete={() => onDeleteSubscription(sub.id)}
                         onRefresh={() => onRefreshSubscription(sub.id)}
@@ -387,24 +392,13 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </button>
                       </div>
                     </div>
-                    <div className="flex flex-col md:flex-row gap-2">
                     <input
                       value={credQuery}
                       onChange={e => setCredQuery(e.target.value)}
                       placeholder="搜索凭证名称、账号、网站、密钥"
-                      className="flex-1 bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-400"
+                      className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-400"
                     />
-                    <select
-                      value={credGroup}
-                      onChange={e => setCredGroup(e.target.value)}
-                      className="bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm"
-                    >
-                      <option value="all">全部分组</option>
-                      {uniqueGroupNames(groups, vaultData.credentials).map(name => (
-                        <option key={name} value={name}>{name}</option>
-                      ))}
-                    </select>
-                    </div>
+                    <GroupFilter value={credGroup} onChange={setCredGroup} groups={groups} items={vaultData.credentials} />
                     <div className="flex items-center gap-2 overflow-x-auto">
                       <button
                         onClick={() => setShowAICredModal(true)}
@@ -436,6 +430,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         {vaultData.credentials.length > 0 ? (
                           <CredentialTable
                             credentials={filteredCreds}
+                            groups={groups}
                             onCredentialClick={handleCredentialClick}
                             onEdit={handleEditCredential}
                             onDelete={(id) => onDeleteCredential(id)}
@@ -452,6 +447,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                           <CredentialRow
                             key={cred.id}
                             credential={cred}
+                            groups={groups}
                             onClick={() => handleCredentialClick(cred)}
                             onEdit={() => handleEditCredential(cred)}
                             onDelete={() => onDeleteCredential(cred.id)}
@@ -471,6 +467,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         <CredentialRow
                           key={cred.id}
                           credential={cred}
+                          groups={groups}
                           onClick={() => handleCredentialClick(cred)}
                           onEdit={() => handleEditCredential(cred)}
                           onDelete={() => onDeleteCredential(cred.id)}
@@ -557,6 +554,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       <CredentialDetailModal
         isOpen={showCredentialDetail}
         credential={selectedCredential}
+        groups={groups}
         onClose={() => {
           setShowCredentialDetail(false);
           setSelectedCredential(null);
