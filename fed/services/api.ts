@@ -1,4 +1,4 @@
-import { Memo } from '../types';
+import { BatchResultItem, Credential, GroupAssignment, Memo } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '/api/v1';
 
@@ -124,6 +124,41 @@ class ApiService {
     });
   }
 
+  async batchCreateCredentials(items: Partial<Credential>[]) {
+    return this.request<{
+      created: Credential[];
+      skipped: BatchResultItem[];
+      failed: BatchResultItem[];
+      createdCount: number;
+      skippedCount: number;
+      failedCount: number;
+    }>('/credentials/batch', {
+      method: 'POST',
+      body: JSON.stringify({ items }),
+    });
+  }
+
+  async updateCredentialGroups(assignments: GroupAssignment[]) {
+    return this.request<{ updated: number }>('/credentials/groups', {
+      method: 'PUT',
+      body: JSON.stringify({ assignments }),
+    });
+  }
+
+  async updateSubscriptionGroups(assignments: GroupAssignment[]) {
+    return this.request<{ updated: number }>('/subscriptions/groups', {
+      method: 'PUT',
+      body: JSON.stringify({ assignments }),
+    });
+  }
+
+  async updateMemoGroups(assignments: GroupAssignment[]) {
+    return this.request<{ updated: number }>('/memos/groups', {
+      method: 'PUT',
+      body: JSON.stringify({ assignments }),
+    });
+  }
+
   async updateCredential(id: string, data: any) {
     return this.request<any>(`/credentials/${id}`, {
       method: 'PUT',
@@ -201,6 +236,26 @@ class ApiService {
       tagCreated?: boolean;
       newTag?: { id: string; name: string; color: string };
     }>('/ai/parse-subscription', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  async assignGroups(data: {
+    kind: 'credentials' | 'subscriptions' | 'memos';
+    items: Array<{
+      id: string;
+      title: string;
+      username?: string;
+      website?: string;
+      notes?: string;
+      category?: string;
+    }>;
+  }) {
+    return this.request<{
+      assignments: GroupAssignment[];
+      count: number;
+    }>('/ai/assign-groups', {
       method: 'POST',
       body: JSON.stringify(data),
     });

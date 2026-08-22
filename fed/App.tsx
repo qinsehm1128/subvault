@@ -27,6 +27,8 @@ const App: React.FC = () => {
     addCredential,
     updateCredential,
     batchAddCredentials,
+    batchUpdateCredentialGroups,
+    batchUpdateSubscriptionGroups,
     deleteCredential,
     refreshSubscription,
     importVaultData,
@@ -100,6 +102,8 @@ const App: React.FC = () => {
       onAddCredential={addCredential}
       onUpdateCredential={updateCredential}
       onBatchAddCredentials={batchAddCredentials}
+      onBatchUpdateCredentialGroups={batchUpdateCredentialGroups}
+      onBatchUpdateSubscriptionGroups={batchUpdateSubscriptionGroups}
       onDeleteCredential={deleteCredential}
       onRefreshSubscription={refreshSubscription}
       onExport={() => {

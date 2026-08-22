@@ -7,8 +7,13 @@ import { MemoCard } from '../components/MemoCard';
 import { AddMemoModal } from '../components/modals/AddMemoModal';
 import { useMemoApi } from '../hooks/useMemoApi';
 import { searchMemos } from '../utils/memoUtils';
-import { PlusIcon, MemoIcon } from '../components/Icons';
+import { PlusIcon, MemoIcon, BrainIcon } from '../components/Icons';
 import { ModalOverlay } from '../components/modals/ModalOverlay';
+import { GroupedSections } from '../components/GroupedSections';
+import { BatchGroupBar } from '../components/BatchGroupBar';
+import { AIGroupModal, AIGroupSourceItem } from '../components/modals/AIGroupModal';
+import { useItemSelection } from '../hooks/useItemSelection';
+import { GroupAssignment } from '../types';
 
 // Search icon component
 const SearchIcon = ({ className }: { className?: string }) => (
@@ -29,7 +34,7 @@ export const MemoPage: React.FC<MemoPageProps> = ({
   onUpdateMemo,
   onDeleteMemo
 }) => {
-  const { memos, isLoading, error, setError, loadMemos, addMemo, updateMemo, deleteMemo } = useMemoApi();
+  const { memos, isLoading, error, setError, loadMemos, addMemo, updateMemo, batchUpdateMemoGroups, deleteMemo } = useMemoApi();
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingMemo, setEditingMemo] = useState<Memo | undefined>(undefined);
@@ -37,6 +42,9 @@ export const MemoPage: React.FC<MemoPageProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [groups, setGroups] = useState<VaultGroup[]>([]);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<string | null>(null);
+  const [aiGroupItems, setAIGroupItems] = useState<AIGroupSourceItem[]>([]);
+  const [showAIGroup, setShowAIGroup] = useState(false);
+  const [groupBusy, setGroupBusy] = useState(false);
 
   // Load memos on mount
   useEffect(() => {
@@ -60,6 +68,9 @@ export const MemoPage: React.FC<MemoPageProps> = ({
     
     return result;
   }, [memos, selectedCategory, searchTerm]);
+
+  const memoIds = useMemo(() => filteredMemos.map(item => item.id), [filteredMemos]);
+  const memoSelect = useItemSelection(memoIds);
 
   // Handle add memo
   const handleAddMemo = () => {
@@ -162,6 +173,35 @@ export const MemoPage: React.FC<MemoPageProps> = ({
               )}
             </div>
             <GroupFilter value={selectedCategory} onChange={setSelectedCategory} groups={groups} items={memos} />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => memoSelect.setSelectMode(true)}
+                className="px-3 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-xl min-h-[40px]"
+              >
+                批量管理
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const source = memoSelect.selectedIds.length > 0
+                    ? filteredMemos.filter(m => memoSelect.selectedIds.includes(m.id))
+                    : filteredMemos;
+                  if (source.length === 0) return;
+                  setAIGroupItems(source.map(m => ({
+                    id: m.id,
+                    title: m.title,
+                    notes: m.content,
+                    category: m.category,
+                  })));
+                  setShowAIGroup(true);
+                }}
+                className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-violet-700 bg-violet-50 border border-violet-100 rounded-xl min-h-[40px]"
+              >
+                <BrainIcon className="w-3.5 h-3.5" />
+                AI 整理分组
+              </button>
+            </div>
           </div>
 
           {/* Loading State */}
@@ -174,17 +214,56 @@ export const MemoPage: React.FC<MemoPageProps> = ({
 
           {/* Memo Grid */}
           {!isLoading && filteredMemos.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {filteredMemos.map(memo => (
+            <GroupedSections
+              items={filteredMemos}
+              groups={groups}
+              onHeaderClick={setSelectedCategory}
+              renderItem={memo => (
                 <MemoCard
-                  key={memo.id}
                   memo={memo}
                   groups={groups}
+                  selectable={memoSelect.selectMode}
+                  selected={memoSelect.isSelected(memo.id)}
+                  onToggleSelect={() => memoSelect.toggle(memo.id)}
                   onEdit={() => handleEditMemo(memo)}
                   onDelete={() => setShowDeleteConfirm(memo.id)}
                 />
-              ))}
-            </div>
+              )}
+            />
+          )}
+          {memoSelect.selectMode && (
+            <BatchGroupBar
+              selectedCount={memoSelect.selectedIds.length}
+              visibleCount={filteredMemos.length}
+              groups={groups}
+              items={memos}
+              busy={groupBusy}
+              onSelectAll={memoSelect.selectAll}
+              onClear={memoSelect.clear}
+              onMoveTo={async (category) => {
+                setGroupBusy(true);
+                try {
+                  await batchUpdateMemoGroups(memoSelect.selectedIds.map(id => ({ id, category })));
+                  memoSelect.clear();
+                  api.getTags().then(setGroups).catch(() => undefined);
+                } finally {
+                  setGroupBusy(false);
+                }
+              }}
+              onAIOrganize={() => {
+                const source = memoSelect.selectedIds.length > 0
+                  ? filteredMemos.filter(m => memoSelect.selectedIds.includes(m.id))
+                  : filteredMemos;
+                if (source.length === 0) return;
+                setAIGroupItems(source.map(m => ({
+                  id: m.id,
+                  title: m.title,
+                  notes: m.content,
+                  category: m.category,
+                })));
+                setShowAIGroup(true);
+              }}
+            />
           )}
 
           {/* Empty State */}
@@ -222,6 +301,21 @@ export const MemoPage: React.FC<MemoPageProps> = ({
         onClose={handleCloseModal}
         onSave={handleSaveMemo}
         editMemo={editingMemo}
+      />
+
+      <AIGroupModal
+        isOpen={showAIGroup}
+        kind="memos"
+        items={aiGroupItems}
+        onClose={() => {
+          setShowAIGroup(false);
+          setAIGroupItems([]);
+        }}
+        onApply={async (assignments: GroupAssignment[]) => {
+          await batchUpdateMemoGroups(assignments);
+          memoSelect.clear();
+          api.getTags().then(setGroups).catch(() => undefined);
+        }}
       />
 
       {/* Delete Confirmation Dialog */}

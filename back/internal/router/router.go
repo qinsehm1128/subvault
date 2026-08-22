@@ -57,6 +57,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 			{
 				subs.GET("", vaultHandler.GetSubscriptions)
 				subs.POST("", vaultHandler.CreateSubscription)
+				subs.PUT("/groups", vaultHandler.UpdateSubscriptionGroups)
 				subs.PUT("/:id", vaultHandler.UpdateSubscription)
 				subs.DELETE("/:id", vaultHandler.DeleteSubscription)
 			}
@@ -66,6 +67,8 @@ func Setup(cfg *config.Config) *gin.Engine {
 			{
 				creds.GET("", vaultHandler.GetCredentials)
 				creds.POST("", vaultHandler.CreateCredential)
+				creds.POST("/batch", vaultHandler.BatchCreateCredentials)
+				creds.PUT("/groups", vaultHandler.UpdateCredentialGroups)
 				creds.PUT("/:id", vaultHandler.UpdateCredential)
 				creds.DELETE("/:id", vaultHandler.DeleteCredential)
 			}
@@ -76,6 +79,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 			{
 				memos.GET("", memoHandler.GetMemos)
 				memos.POST("", memoHandler.CreateMemo)
+				memos.PUT("/groups", memoHandler.UpdateMemoGroups)
 				memos.PUT("/:id", memoHandler.UpdateMemo)
 				memos.DELETE("/:id", memoHandler.DeleteMemo)
 			}
@@ -89,6 +93,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 				ai.POST("/analyze", aiHandler.Analyze)
 				ai.POST("/parse-subscription", aiHandler.ParseSubscription)
 				ai.POST("/parse-credentials", aiHandler.ParseCredentials)
+				ai.POST("/assign-groups", aiHandler.AssignGroups)
 				ai.GET("/reports", aiHandler.GetReports)
 				ai.GET("/chat", aiHandler.GetChatHistory)
 				ai.POST("/chat", aiHandler.Chat)

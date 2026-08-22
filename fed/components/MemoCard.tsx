@@ -12,6 +12,9 @@ interface MemoCardProps {
   groups?: VaultGroup[];
   onEdit: () => void;
   onDelete: () => void;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
 }
 
 // Copy icon component
@@ -28,7 +31,15 @@ const truncateContent = (content: string, maxLength: number = 100): string => {
   return content.slice(0, maxLength).trim() + '...';
 };
 
-export const MemoCard: React.FC<MemoCardProps> = ({ memo, groups = [], onEdit, onDelete }) => {
+export const MemoCard: React.FC<MemoCardProps> = ({
+  memo,
+  groups = [],
+  onEdit,
+  onDelete,
+  selectable,
+  selected,
+  onToggleSelect,
+}) => {
   const [copied, setCopied] = useState(false);
   const color = groupColor(groups, memo.category);
 
@@ -52,7 +63,23 @@ export const MemoCard: React.FC<MemoCardProps> = ({ memo, groups = [], onEdit, o
   };
 
   return (
-    <div className="group relative bg-white rounded-2xl border border-slate-200/60 hover:border-blue-200 hover:shadow-lg transition-all duration-200 overflow-hidden">
+    <div
+      className={`group relative bg-white rounded-2xl border hover:shadow-lg transition-all duration-200 overflow-hidden ${
+        selectable ? 'cursor-pointer' : ''
+      } ${selected ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200/60 hover:border-blue-200'}`}
+      onClick={selectable ? onToggleSelect : undefined}
+    >
+      {selectable && (
+        <div className="absolute top-3 left-3 z-10">
+          <input
+            type="checkbox"
+            checked={!!selected}
+            onChange={() => onToggleSelect?.()}
+            onClick={e => e.stopPropagation()}
+            className="w-4 h-4 rounded border-slate-300 text-blue-600"
+          />
+        </div>
+      )}
       {/* Top gradient bar */}
       <div className="h-1 w-full" style={{ backgroundColor: color }} />
       

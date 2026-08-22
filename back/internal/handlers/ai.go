@@ -448,7 +448,6 @@ func (h *AIHandler) Analyze(c *gin.Context) {
 	c.JSON(http.StatusOK, result)
 }
 
-
 // OpenAI API 结构
 type openAIRequest struct {
 	Model    string          `json:"model"`
@@ -952,4 +951,134 @@ func (h *AIHandler) ParseCredentials(c *gin.Context) {
 		result["newTags"] = tagsAsJSON(newTags)
 	}
 	c.JSON(http.StatusOK, result)
+}
+
+type assignGroupItem struct {
+	ID       string `json:"id"`
+	Title    string `json:"title"`
+	Username string `json:"username"`
+	Website  string `json:"website"`
+	Notes    string `json:"notes"`
+	Category string `json:"category"`
+}
+
+// AssignGroups 让 AI 为已有条目推荐分组，不直接写入
+func (h *AIHandler) AssignGroups(c *gin.Context) {
+	vaultID := c.GetString("vaultId")
+
+	var aiConfig models.AIConfig
+	if err := database.DB.Where("vault_id = ?", vaultID).First(&aiConfig).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请先配置 AI 服务"})
+		return
+	}
+	if aiConfig.BaseURL == "" || aiConfig.APIKey == "" || aiConfig.Model == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "AI 配置不完整"})
+		return
+	}
+
+	decryptedKey, err := h.getDecryptedAPIKey(aiConfig)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "解密 API Key 失败"})
+		return
+	}
+
+	var input struct {
+		Kind  string            `json:"kind"`
+		Items []assignGroupItem `json:"items"`
+	}
+	if err := c.ShouldBindJSON(&input); err != nil || len(input.Items) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "请提供需要整理的条目"})
+		return
+	}
+	if len(input.Items) > 200 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "单次最多整理 200 条"})
+		return
+	}
+
+	allowed := map[string]struct{}{}
+	var b strings.Builder
+	for _, item := range input.Items {
+		id := strings.TrimSpace(item.ID)
+		if id == "" {
+			continue
+		}
+		allowed[id] = struct{}{}
+		fmt.Fprintf(&b, "- id=%s | 标题=%s | 账号=%s | 网站=%s | 当前分组=%s | 备注=%s\n",
+			id, item.Title, item.Username, item.Website, ResolveGroupName(item.Category), trimForPrompt(item.Notes, 80))
+	}
+	if len(allowed) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "没有可整理的条目"})
+		return
+	}
+
+	existingTags := loadVaultTags(vaultID)
+	prompt := fmt.Sprintf(`请为以下已有内容重新分配分组。请务必使用简体中文，并严格按照 JSON 数组返回。
+%s
+
+整理规则：
+1. 优先使用用户已有分组名称，文字必须完全一致。
+2. 只有确实没有合适分组时，才新建一个简短中文分组名。
+3. 同类内容应分到同一组，不要为每条单独建组。
+4. 必须为每一条返回 id 和 category，不要漏项。
+
+条目：
+%s
+
+只返回 JSON 数组，不要其他文字：
+[
+  {"id": "条目id", "category": "分组名称"}
+]`, tagsContextLine(existingTags), b.String())
+
+	content, err := callOpenAIChatAPI(aiConfig.BaseURL, decryptedKey, aiConfig.Model, []openAIMessage{
+		{Role: "user", Content: prompt},
+	})
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	var assignments []map[string]interface{}
+	if err := json.Unmarshal([]byte(stripAIJSON(content)), &assignments); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "解析分组建议失败"})
+		return
+	}
+
+	filtered := make([]map[string]interface{}, 0, len(assignments))
+	for _, item := range assignments {
+		id, _ := item["id"].(string)
+		id = strings.TrimSpace(id)
+		if _, ok := allowed[id]; !ok {
+			continue
+		}
+		category, _ := item["category"].(string)
+		filtered = append(filtered, map[string]interface{}{
+			"id":       id,
+			"category": ResolveGroupName(category),
+		})
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"assignments": filtered,
+		"count":       len(filtered),
+	})
+}
+
+func stripAIJSON(content string) string {
+	content = strings.TrimSpace(content)
+	if strings.HasPrefix(content, "```json") {
+		content = strings.TrimPrefix(content, "```json")
+		content = strings.TrimSuffix(content, "```")
+	} else if strings.HasPrefix(content, "```") {
+		content = strings.TrimPrefix(content, "```")
+		content = strings.TrimSuffix(content, "```")
+	}
+	return strings.TrimSpace(content)
+}
+
+func trimForPrompt(s string, max int) string {
+	s = strings.TrimSpace(strings.ReplaceAll(s, "\n", " "))
+	if len([]rune(s)) <= max {
+		return s
+	}
+	return string([]rune(s)[:max]) + "…"
 }

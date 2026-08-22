@@ -74,3 +74,21 @@ export interface AnalysisResult {
   categories: { name: string; amount: number; percentage: number }[];
   insights: string[];
 }
+
+export interface GroupAssignment {
+  id: string;
+  category: string;
+}
+
+export interface BatchResultItem {
+  label: string;
+  reason: string;
+}
+
+export interface BatchImportResult {
+  created: number;
+  skipped: number;
+  failed: number;
+  skippedItems?: BatchResultItem[];
+  failedItems?: BatchResultItem[];
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { VaultData, Subscription, Credential } from '../types';
+import { VaultData, Subscription, Credential, GroupAssignment, BatchImportResult } from '../types';
 import { Sidebar, TabType } from '../components/Sidebar';
 import { SubscriptionCard } from '../components/SubscriptionCard';
 import { CredentialRow } from '../components/CredentialRow';
@@ -9,6 +9,7 @@ import { ImportCredentialsModal } from '../components/modals/ImportCredentialsMo
 import { AISubscriptionModal } from '../components/modals/AISubscriptionModal';
 import { AICredentialModal } from '../components/modals/AICredentialModal';
 import { AICredentialPreviewModal } from '../components/modals/AICredentialPreviewModal';
+import { AIGroupModal, AIGroupSourceItem } from '../components/modals/AIGroupModal';
 import { CredentialDetailModal } from '../components/modals/CredentialDetailModal';
 import { AIPage } from './AIPage';
 import { AnalyticsPage } from './AnalyticsPage';
@@ -20,6 +21,10 @@ import { MobileBottomNav } from '../components/MobileBottomNav';
 import { api } from '../services/api';
 import { passwordIssues } from '../utils/password';
 import { GroupFilter } from '../components/GroupFilter';
+import { GroupedSections } from '../components/GroupedSections';
+import { BatchGroupBar } from '../components/BatchGroupBar';
+import { useItemSelection } from '../hooks/useItemSelection';
+import { groupItems } from '../utils/groups';
 
 const TAB_TITLES: Record<TabType, string> = {
   subscriptions: '服务订阅',
@@ -37,7 +42,9 @@ interface DashboardPageProps {
   onDeleteSubscription: (id: string) => void;
   onAddCredential: (cred: Partial<Credential>) => void;
   onUpdateCredential?: (id: string, cred: Partial<Credential>) => void;
-  onBatchAddCredentials: (creds: Partial<Credential>[]) => void;
+  onBatchAddCredentials: (creds: Partial<Credential>[]) => Promise<BatchImportResult> | BatchImportResult | void;
+  onBatchUpdateCredentialGroups: (assignments: GroupAssignment[]) => Promise<void> | void;
+  onBatchUpdateSubscriptionGroups: (assignments: GroupAssignment[]) => Promise<void> | void;
   onDeleteCredential: (id: string) => void;
   onRefreshSubscription: (id: string) => void;
   onExport: () => void;
@@ -53,6 +60,8 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onAddCredential,
   onUpdateCredential,
   onBatchAddCredentials,
+  onBatchUpdateCredentialGroups,
+  onBatchUpdateSubscriptionGroups,
   onDeleteCredential,
   onRefreshSubscription,
   onExport,
@@ -86,6 +95,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   const [credGroup, setCredGroup] = useState('all');
   const [groups, setGroups] = useState<{ id: string; name: string; color: string }[]>([]);
   const [insights, setInsights] = useState<{ kind: string; title: string; detail: string }[]>([]);
+  const [importNotice, setImportNotice] = useState('');
+  const [aiGroupKind, setAIGroupKind] = useState<'credentials' | 'subscriptions' | null>(null);
+  const [aiGroupItems, setAIGroupItems] = useState<AIGroupSourceItem[]>([]);
+  const [groupBusy, setGroupBusy] = useState(false);
 
   const filteredSubs = useMemo(() => {
     return vaultData.subscriptions.filter(sub => {
@@ -108,6 +121,11 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       return [c.label, c.username, c.website, c.category].some(v => (v || '').toLowerCase().includes(q));
     });
   }, [vaultData.credentials, credQuery, credGroup]);
+
+  const subIds = useMemo(() => filteredSubs.map(item => item.id), [filteredSubs]);
+  const credIds = useMemo(() => filteredCreds.map(item => item.id), [filteredCreds]);
+  const subSelect = useItemSelection(subIds);
+  const credSelect = useItemSelection(credIds);
 
   useEffect(() => {
     if (activeTab !== 'subscriptions') return;
@@ -138,6 +156,10 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     setAIParsedCredentials([]);
     setShowCredentialDetail(false);
     setSelectedCredential(null);
+    subSelect.clear();
+    credSelect.clear();
+    setAIGroupKind(null);
+    setAIGroupItems([]);
   };
 
   const handleAddSubscription = () => {
@@ -218,13 +240,71 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
     setShowAICredPreview(true);
   };
 
-  // 确认导入 AI 解析的凭据
-  const handleConfirmAICredentials = (credentials: Partial<Credential>[]) => {
-    if (credentials.length === 0) return;
+  const formatImportNotice = (result: BatchImportResult) => {
+    const parts = [`新增 ${result.created} 条`];
+    if (result.skipped) parts.push(`已存在跳过 ${result.skipped} 条`);
+    if (result.failed) parts.push(`失败 ${result.failed} 条`);
+    return `导入完成：${parts.join('，')}`;
+  };
 
-    // 批量添加凭据
-    onBatchAddCredentials(credentials);
+  const handleConfirmAICredentials = async (credentials: Partial<Credential>[]) => {
+    if (credentials.length === 0) return;
+    const result = await onBatchAddCredentials(credentials);
+    if (result) setImportNotice(formatImportNotice(result));
     setAIParsedCredentials([]);
+    api.getTags().then(setGroups).catch(() => undefined);
+  };
+
+  const handleImportCredentials = async (credentials: Partial<Credential>[]) => {
+    const result = await onBatchAddCredentials(credentials);
+    if (result) setImportNotice(formatImportNotice(result));
+    api.getTags().then(setGroups).catch(() => undefined);
+  };
+
+  const handleMoveSubscriptions = async (category: string) => {
+    if (subSelect.selectedIds.length === 0) return;
+    setGroupBusy(true);
+    try {
+      await onBatchUpdateSubscriptionGroups(subSelect.selectedIds.map(id => ({ id, category })));
+      subSelect.clear();
+      api.getTags().then(setGroups).catch(() => undefined);
+    } finally {
+      setGroupBusy(false);
+    }
+  };
+
+  const handleMoveCredentials = async (category: string) => {
+    if (credSelect.selectedIds.length === 0) return;
+    setGroupBusy(true);
+    try {
+      await onBatchUpdateCredentialGroups(credSelect.selectedIds.map(id => ({ id, category })));
+      credSelect.clear();
+      api.getTags().then(setGroups).catch(() => undefined);
+    } finally {
+      setGroupBusy(false);
+    }
+  };
+
+  const openAIGroup = (kind: 'credentials' | 'subscriptions') => {
+    const items: AIGroupSourceItem[] = kind === 'credentials'
+      ? (credSelect.selectedIds.length > 0 ? filteredCreds.filter(c => credSelect.selectedIds.includes(c.id)) : filteredCreds)
+          .map(c => ({ id: c.id, title: c.label, username: c.username, website: c.website, notes: c.notes, category: c.category }))
+      : (subSelect.selectedIds.length > 0 ? filteredSubs.filter(s => subSelect.selectedIds.includes(s.id)) : filteredSubs)
+          .map(s => ({ id: s.id, title: s.name, website: s.website, notes: s.notes, category: s.category }));
+    if (items.length === 0) return;
+    setAIGroupKind(kind);
+    setAIGroupItems(items);
+  };
+
+  const handleApplyAIGroups = async (assignments: GroupAssignment[]) => {
+    if (aiGroupKind === 'credentials') {
+      await onBatchUpdateCredentialGroups(assignments);
+      credSelect.clear();
+    } else {
+      await onBatchUpdateSubscriptionGroups(assignments);
+      subSelect.clear();
+    }
+    api.getTags().then(setGroups).catch(() => undefined);
   };
 
   // 点击凭证查看详情
@@ -323,31 +403,57 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                     </div>
                   </div>
                   <GroupFilter value={subGroup} onChange={setSubGroup} groups={groups} items={vaultData.subscriptions} />
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => subSelect.setSelectMode(true)}
+                      className="px-3 py-2 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-xl min-h-[40px]"
+                    >
+                      批量管理
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openAIGroup('subscriptions')}
+                      className="flex items-center gap-1 px-3 py-2 text-xs font-medium text-violet-700 bg-violet-50 border border-violet-100 rounded-xl min-h-[40px]"
+                    >
+                      <BrainIcon className="w-3.5 h-3.5" />
+                      AI 整理分组
+                    </button>
+                  </div>
                   
                   {subView === 'calendar' ? (
                     <RenewalCalendar subscriptions={filteredSubs} onEdit={handleEditSubscription} />
                   ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {filteredSubs.map(sub => (
-                      <SubscriptionCard
-                        key={sub.id}
-                        subscription={sub}
-                        linkedCredential={vaultData.credentials.find(c => c.id === sub.credentialId)}
+                  <>
+                    {filteredSubs.length > 0 && (
+                      <GroupedSections
+                        items={filteredSubs}
                         groups={groups}
-                        onEdit={() => handleEditSubscription(sub)}
-                        onDelete={() => onDeleteSubscription(sub.id)}
-                        onRefresh={() => onRefreshSubscription(sub.id)}
-                        onOpenCredential={() => {
-                          const cred = vaultData.credentials.find(c => c.id === sub.credentialId);
-                          if (cred) handleCredentialClick(cred);
-                        }}
+                        onHeaderClick={setSubGroup}
+                        renderItem={sub => (
+                          <SubscriptionCard
+                            subscription={sub}
+                            linkedCredential={vaultData.credentials.find(c => c.id === sub.credentialId)}
+                            groups={groups}
+                            selectable={subSelect.selectMode}
+                            selected={subSelect.isSelected(sub.id)}
+                            onToggleSelect={() => subSelect.toggle(sub.id)}
+                            onEdit={() => handleEditSubscription(sub)}
+                            onDelete={() => onDeleteSubscription(sub.id)}
+                            onRefresh={() => onRefreshSubscription(sub.id)}
+                            onOpenCredential={() => {
+                              const cred = vaultData.credentials.find(c => c.id === sub.credentialId);
+                              if (cred) handleCredentialClick(cred);
+                            }}
+                          />
+                        )}
                       />
-                    ))}
+                    )}
                     {filteredSubs.length === 0 && vaultData.subscriptions.length > 0 && (
-                      <div className="col-span-full py-10 text-center text-sm text-slate-400 bg-white border border-slate-200/60 rounded-2xl">没有匹配的订阅</div>
+                      <div className="py-10 text-center text-sm text-slate-400 bg-white border border-slate-200/60 rounded-2xl">没有匹配的订阅</div>
                     )}
                     {vaultData.subscriptions.length === 0 && (
-                      <div className="col-span-full py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
+                      <div className="py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
                         <CreditCardIcon className="w-12 h-12 text-slate-200 mb-4" />
                         <p className="text-slate-400 font-medium text-sm mb-3">暂无订阅记录</p>
                         <button 
@@ -358,7 +464,20 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         </button>
                       </div>
                     )}
-                  </div>
+                    {subSelect.selectMode && (
+                      <BatchGroupBar
+                        selectedCount={subSelect.selectedIds.length}
+                        visibleCount={filteredSubs.length}
+                        groups={groups}
+                        items={vaultData.subscriptions}
+                        busy={groupBusy}
+                        onSelectAll={subSelect.selectAll}
+                        onClear={subSelect.clear}
+                        onMoveTo={handleMoveSubscriptions}
+                        onAIOrganize={() => openAIGroup('subscriptions')}
+                      />
+                    )}
+                  </>
                   )}
                 </div>
               )}
@@ -399,6 +518,12 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                       className="w-full bg-white border border-slate-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-blue-400"
                     />
                     <GroupFilter value={credGroup} onChange={setCredGroup} groups={groups} items={vaultData.credentials} />
+                    {importNotice && (
+                      <div className="flex items-center justify-between text-xs bg-emerald-50 text-emerald-700 rounded-xl px-3 py-2">
+                        <span>{importNotice}</span>
+                        <button type="button" onClick={() => setImportNotice('')} className="text-emerald-500">×</button>
+                      </div>
+                    )}
                     <div className="flex items-center gap-2 overflow-x-auto">
                       <button
                         onClick={() => setShowAICredModal(true)}
@@ -422,19 +547,52 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                         <PlusIcon className="w-4 h-4" />
                         <span>手动新增</span>
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => credSelect.setSelectMode(true)}
+                        className="px-3 py-2.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-xl min-h-[44px] whitespace-nowrap"
+                      >
+                        批量管理
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => openAIGroup('credentials')}
+                        className="flex items-center gap-1 px-3 py-2.5 text-xs font-medium text-violet-700 bg-violet-50 border border-violet-100 rounded-xl min-h-[44px] whitespace-nowrap"
+                      >
+                        <BrainIcon className="w-3.5 h-3.5" />
+                        AI 整理分组
+                      </button>
                     </div>
                   </div>
                   {credViewMode === 'table' ? (
                     <>
-                      <div className="hidden md:block">
-                        {vaultData.credentials.length > 0 ? (
-                          <CredentialTable
-                            credentials={filteredCreds}
-                            groups={groups}
-                            onCredentialClick={handleCredentialClick}
-                            onEdit={handleEditCredential}
-                            onDelete={(id) => onDeleteCredential(id)}
-                          />
+                      <div className="hidden md:block space-y-6">
+                        {vaultData.credentials.length > 0 && filteredCreds.length > 0 ? (
+                          groupItems(filteredCreds, groups).map(section => (
+                            <div key={section.name} className="space-y-3">
+                              <button
+                                type="button"
+                                onClick={() => setCredGroup(section.name)}
+                                className="flex items-center gap-2 px-1"
+                              >
+                                <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: section.color }} />
+                                <span className="text-sm font-semibold text-slate-800">{section.name}</span>
+                                <span className="text-xs text-slate-400">{section.items.length}</span>
+                              </button>
+                              <CredentialTable
+                                credentials={section.items}
+                                groups={groups}
+                                onCredentialClick={handleCredentialClick}
+                                onEdit={handleEditCredential}
+                                onDelete={(id) => onDeleteCredential(id)}
+                                selectable={credSelect.selectMode}
+                                selectedIds={new Set(credSelect.selectedIds)}
+                                onToggleSelect={credSelect.toggle}
+                              />
+                            </div>
+                          ))
+                        ) : vaultData.credentials.length > 0 ? (
+                          <div className="py-10 text-center text-sm text-slate-400 bg-white border border-slate-200/60 rounded-2xl">没有匹配的凭证</div>
                         ) : (
                           <div className="py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
                             <KeyIcon className="w-12 h-12 text-slate-200 mb-4" />
@@ -442,44 +600,78 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
                           </div>
                         )}
                       </div>
-                      <div className="grid grid-cols-1 gap-4 md:hidden">
-                        {filteredCreds.map(cred => (
-                          <CredentialRow
-                            key={cred.id}
-                            credential={cred}
+                      <div className="md:hidden">
+                        {filteredCreds.length > 0 ? (
+                          <GroupedSections
+                            items={filteredCreds}
                             groups={groups}
-                            onClick={() => handleCredentialClick(cred)}
-                            onEdit={() => handleEditCredential(cred)}
-                            onDelete={() => onDeleteCredential(cred.id)}
+                            gridClassName="grid grid-cols-1 gap-4"
+                            onHeaderClick={setCredGroup}
+                            renderItem={cred => (
+                              <CredentialRow
+                                credential={cred}
+                                groups={groups}
+                                selectable={credSelect.selectMode}
+                                selected={credSelect.isSelected(cred.id)}
+                                onToggleSelect={() => credSelect.toggle(cred.id)}
+                                onClick={() => handleCredentialClick(cred)}
+                                onEdit={() => handleEditCredential(cred)}
+                                onDelete={() => onDeleteCredential(cred.id)}
+                              />
+                            )}
                           />
-                        ))}
-                        {vaultData.credentials.length === 0 && (
-                          <div className="col-span-full py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
+                        ) : vaultData.credentials.length === 0 ? (
+                          <div className="py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
                             <KeyIcon className="w-12 h-12 text-slate-200 mb-4" />
                             <p className="text-slate-400 font-medium text-sm">暂无存储凭证</p>
                           </div>
+                        ) : (
+                          <div className="py-10 text-center text-sm text-slate-400 bg-white border border-slate-200/60 rounded-2xl">没有匹配的凭证</div>
                         )}
                       </div>
                     </>
                   ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                      {filteredCreds.map(cred => (
-                        <CredentialRow
-                          key={cred.id}
-                          credential={cred}
+                    <>
+                      {filteredCreds.length > 0 ? (
+                        <GroupedSections
+                          items={filteredCreds}
                           groups={groups}
-                          onClick={() => handleCredentialClick(cred)}
-                          onEdit={() => handleEditCredential(cred)}
-                          onDelete={() => onDeleteCredential(cred.id)}
+                          onHeaderClick={setCredGroup}
+                          renderItem={cred => (
+                            <CredentialRow
+                              credential={cred}
+                              groups={groups}
+                              selectable={credSelect.selectMode}
+                              selected={credSelect.isSelected(cred.id)}
+                              onToggleSelect={() => credSelect.toggle(cred.id)}
+                              onClick={() => handleCredentialClick(cred)}
+                              onEdit={() => handleEditCredential(cred)}
+                              onDelete={() => onDeleteCredential(cred.id)}
+                            />
+                          )}
                         />
-                      ))}
-                      {vaultData.credentials.length === 0 && (
-                        <div className="col-span-full py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
+                      ) : vaultData.credentials.length === 0 ? (
+                        <div className="py-16 flex flex-col items-center justify-center bg-white border border-slate-200/60 rounded-2xl">
                           <KeyIcon className="w-12 h-12 text-slate-200 mb-4" />
                           <p className="text-slate-400 font-medium text-sm">暂无存储凭证</p>
                         </div>
+                      ) : (
+                        <div className="py-10 text-center text-sm text-slate-400 bg-white border border-slate-200/60 rounded-2xl">没有匹配的凭证</div>
                       )}
-                    </div>
+                    </>
+                  )}
+                  {credSelect.selectMode && (
+                    <BatchGroupBar
+                      selectedCount={credSelect.selectedIds.length}
+                      visibleCount={filteredCreds.length}
+                      groups={groups}
+                      items={vaultData.credentials}
+                      busy={groupBusy}
+                      onSelectAll={credSelect.selectAll}
+                      onClear={credSelect.clear}
+                      onMoveTo={handleMoveCredentials}
+                      onAIOrganize={() => openAIGroup('credentials')}
+                    />
                   )}
                 </div>
               )}
@@ -566,7 +758,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
       <ImportCredentialsModal
         isOpen={showImportModal}
         onClose={() => setShowImportModal(false)}
-        onImport={onBatchAddCredentials}
+        onImport={handleImportCredentials}
       />
 
       <AISubscriptionModal
@@ -589,7 +781,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
           setAIParsedCredentials([]);
         }}
         credentials={aiParsedCredentials}
+        existingCredentials={vaultData.credentials}
         onConfirm={handleConfirmAICredentials}
+      />
+
+      <AIGroupModal
+        isOpen={!!aiGroupKind}
+        kind={aiGroupKind || 'credentials'}
+        items={aiGroupItems}
+        onClose={() => {
+          setAIGroupKind(null);
+          setAIGroupItems([]);
+        }}
+        onApply={handleApplyAIGroups}
       />
     </div>
   );

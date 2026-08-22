@@ -81,8 +81,8 @@ func (rl *RateLimiter) cleanup() {
 
 // 全局速率限制器实例
 var (
-	// 通用 API 限制：每分钟 60 次请求
-	generalLimiter = NewRateLimiter(60, time.Minute)
+	// 通用 API 限制：每分钟 180 次请求（批量导入走独立接口，这里只兜底页面操作）
+	generalLimiter = NewRateLimiter(180, time.Minute)
 	// 认证限制：每分钟 10 次尝试（防止暴力破解）
 	authLimiter = NewRateLimiter(10, time.Minute)
 )

@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { api } from '../services/api';
-import { Memo } from '../types';
+import { GroupAssignment, Memo } from '../types';
 
 export const useMemoApi = () => {
   const [memos, setMemos] = useState<Memo[]>([]);
@@ -71,6 +71,19 @@ export const useMemoApi = () => {
     }
   };
 
+  const batchUpdateMemoGroups = async (assignments: GroupAssignment[]) => {
+    if (assignments.length === 0) return;
+    try {
+      await api.updateMemoGroups(assignments);
+      const byId = new Map(assignments.map(item => [item.id, item.category]));
+      setMemos(prev => prev.map(memo => byId.has(memo.id) ? { ...memo, category: byId.get(memo.id) } : memo));
+      setError('');
+    } catch (err: any) {
+      setError(err.message || '批量调整分组失败');
+      throw err;
+    }
+  };
+
   const deleteMemo = async (id: string) => {
     try {
       await api.deleteMemo(id);
@@ -90,6 +103,7 @@ export const useMemoApi = () => {
     loadMemos,
     addMemo,
     updateMemo,
+    batchUpdateMemoGroups,
     deleteMemo,
   };
 };

@@ -11,6 +11,9 @@ interface CredentialTableProps {
   onCredentialClick: (cred: Credential) => void;
   onEdit: (cred: Credential) => void;
   onDelete: (id: string) => void;
+  selectable?: boolean;
+  selectedIds?: Set<string>;
+  onToggleSelect?: (id: string) => void;
 }
 
 const TableRow: React.FC<{
@@ -19,7 +22,10 @@ const TableRow: React.FC<{
   onClick: () => void;
   onEdit: () => void;
   onDelete: () => void;
-}> = ({ cred, groups, onClick, onEdit, onDelete }) => {
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
+}> = ({ cred, groups, onClick, onEdit, onDelete, selectable, selected, onToggleSelect }) => {
   const [revealed, setRevealed] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -34,9 +40,19 @@ const TableRow: React.FC<{
 
   return (
     <tr
-      className="group hover:bg-blue-50/50 cursor-pointer transition-colors duration-150"
-      onClick={onClick}
+      className={`group cursor-pointer transition-colors duration-150 ${selected ? 'bg-blue-50' : 'hover:bg-blue-50/50'}`}
+      onClick={selectable ? onToggleSelect : onClick}
     >
+      {selectable && (
+        <td className="px-3 py-3 w-10" onClick={e => e.stopPropagation()}>
+          <input
+            type="checkbox"
+            checked={!!selected}
+            onChange={() => onToggleSelect?.()}
+            className="w-4 h-4 rounded border-slate-300 text-blue-600"
+          />
+        </td>
+      )}
       {/* 名称 + 分类 */}
       <td className="px-4 py-3">
         <div className="flex items-center space-x-2">
@@ -130,12 +146,16 @@ export const CredentialTable: React.FC<CredentialTableProps> = ({
   onCredentialClick,
   onEdit,
   onDelete,
+  selectable,
+  selectedIds,
+  onToggleSelect,
 }) => {
   return (
     <div className="credential-table bg-white rounded-2xl border border-slate-200/60 overflow-x-auto">
       <table className="w-full min-w-[720px]">
         <thead>
           <tr className="border-b border-slate-100 bg-slate-50/50">
+            {selectable && <th className="px-3 py-3 w-10" />}
             <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">名称</th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">账号</th>
             <th className="px-4 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">密码</th>
@@ -152,6 +172,9 @@ export const CredentialTable: React.FC<CredentialTableProps> = ({
               onClick={() => onCredentialClick(cred)}
               onEdit={() => onEdit(cred)}
               onDelete={() => onDelete(cred.id)}
+              selectable={selectable}
+              selected={selectedIds?.has(cred.id)}
+              onToggleSelect={() => onToggleSelect?.(cred.id)}
             />
           ))}
         </tbody>

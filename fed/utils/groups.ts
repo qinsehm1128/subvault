@@ -45,3 +45,38 @@ export function uniqueGroupNames(groups: VaultGroup[], used: Array<{ category?: 
   });
   return [DEFAULT_GROUP, ...Array.from(names).filter(n => n !== DEFAULT_GROUP)];
 }
+
+export function groupItems<T extends { category?: string }>(
+  items: T[],
+  groups: VaultGroup[]
+): Array<{ name: string; color: string; items: T[] }> {
+  const names = uniqueGroupNames(groups, items);
+  return names
+    .map(name => ({
+      name,
+      color: groupColor(groups, name),
+      items: items.filter(item => resolveGroupName(item.category) === name),
+    }))
+    .filter(section => section.items.length > 0);
+}
+
+export function normalizeWebsite(website?: string): string {
+  return (website || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .replace(/^www\./, '')
+    .replace(/\/+$/, '');
+}
+
+export function credentialDupKey(cred: { label?: string; username?: string; website?: string }): string {
+  return [
+    (cred.label || '').trim().toLowerCase(),
+    (cred.username || '').trim().toLowerCase(),
+    normalizeWebsite(cred.website),
+  ].join('\n');
+}
+
+export function existingCredentialKeys(credentials: Array<{ label?: string; username?: string; website?: string }>): Set<string> {
+  return new Set(credentials.map(credentialDupKey).filter(key => key !== '\n\n'));
+}

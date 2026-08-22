@@ -11,9 +11,21 @@ interface CredentialRowProps {
   onDelete: () => void;
   onEdit?: () => void;
   onClick?: () => void;
+  selectable?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
 }
 
-export const CredentialRow: React.FC<CredentialRowProps> = ({ credential: cred, groups = [], onDelete, onEdit, onClick }) => {
+export const CredentialRow: React.FC<CredentialRowProps> = ({
+  credential: cred,
+  groups = [],
+  onDelete,
+  onEdit,
+  onClick,
+  selectable,
+  selected,
+  onToggleSelect,
+}) => {
   const [revealed, setRevealed] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
@@ -28,9 +40,22 @@ export const CredentialRow: React.FC<CredentialRowProps> = ({ credential: cred, 
 
   return (
     <div
-      className="group relative bg-white rounded-2xl border border-slate-200/60 hover:border-blue-200 hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden"
-      onClick={onClick}
+      className={`group relative bg-white rounded-2xl border hover:shadow-lg transition-all duration-200 cursor-pointer overflow-hidden ${
+        selected ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-200/60 hover:border-blue-200'
+      }`}
+      onClick={selectable ? onToggleSelect : onClick}
     >
+      {selectable && (
+        <div className="absolute top-3 left-3 z-10">
+          <input
+            type="checkbox"
+            checked={!!selected}
+            onChange={() => onToggleSelect?.()}
+            onClick={e => e.stopPropagation()}
+            className="w-4 h-4 rounded border-slate-300 text-blue-600"
+          />
+        </div>
+      )}
       {/* 顶部渐变条 */}
       <div className="h-1 w-full bg-gradient-to-r from-emerald-500 to-teal-500" />
 

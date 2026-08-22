@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { api } from '../services/api';
-import { VaultData, Subscription, Credential, Memo } from '../types';
+import { VaultData, Subscription, Credential, Memo, GroupAssignment, BatchImportResult } from '../types';
 import { calculateNextRenewal } from '../utils/subscription';
 
 export const useVaultApi = () => {
@@ -177,41 +177,73 @@ export const useVaultApi = () => {
     }
   };
 
-  const batchAddCredentials = async (credentials: Partial<Credential>[]) => {
-    const results: Credential[] = [];
-    const errors: string[] = [];
+  const batchAddCredentials = async (credentials: Partial<Credential>[]): Promise<BatchImportResult> => {
+    const items = credentials
+      .filter(cred => (cred.label || '').trim())
+      .map(cred => ({
+        label: (cred.label || '').trim(),
+        username: cred.username || '',
+        password: cred.password || '',
+        notes: cred.notes || '',
+        website: cred.website || '',
+        category: cred.category || '默认',
+      }));
 
-    for (const cred of credentials) {
-      if (!cred.label || !cred.username) continue;
-
-      try {
-        const created = await api.createCredential({
-          label: cred.label,
-          username: cred.username,
-          password: cred.password || '',
-          notes: cred.notes || '',
-          website: cred.website || '',
-          category: cred.category || '默认',
-        });
-        results.push(created);
-      } catch (err: any) {
-        errors.push(`${cred.label}: ${err.message}`);
+    try {
+      const result = await api.batchCreateCredentials(items);
+      if (result.created?.length) {
+        setVaultData(prev => prev ? {
+          ...prev,
+          credentials: [...prev.credentials, ...result.created],
+          lastUpdated: Date.now(),
+        } : null);
       }
+      if (result.failedCount > 0) {
+        setError(`部分导入失败: ${(result.failed || []).map(item => `${item.label}: ${item.reason}`).join(', ')}`);
+      }
+      return {
+        created: result.createdCount,
+        skipped: result.skippedCount,
+        failed: result.failedCount,
+        skippedItems: result.skipped,
+        failedItems: result.failed,
+      };
+    } catch (err: any) {
+      setError(err.message || '批量导入失败');
+      throw err;
     }
+  };
 
-    if (results.length > 0) {
+  const batchUpdateCredentialGroups = async (assignments: GroupAssignment[]) => {
+    if (assignments.length === 0) return;
+    try {
+      await api.updateCredentialGroups(assignments);
+      const byId = new Map(assignments.map(item => [item.id, item.category]));
       setVaultData(prev => prev ? {
         ...prev,
-        credentials: [...prev.credentials, ...results],
+        credentials: prev.credentials.map(cred => byId.has(cred.id) ? { ...cred, category: byId.get(cred.id) } : cred),
         lastUpdated: Date.now(),
       } : null);
+    } catch (err: any) {
+      setError(err.message || '批量调整分组失败');
+      throw err;
     }
+  };
 
-    if (errors.length > 0) {
-      setError(`部分导入失败: ${errors.join(', ')}`);
+  const batchUpdateSubscriptionGroups = async (assignments: GroupAssignment[]) => {
+    if (assignments.length === 0) return;
+    try {
+      await api.updateSubscriptionGroups(assignments);
+      const byId = new Map(assignments.map(item => [item.id, item.category]));
+      setVaultData(prev => prev ? {
+        ...prev,
+        subscriptions: prev.subscriptions.map(sub => byId.has(sub.id) ? { ...sub, category: byId.get(sub.id)! } : sub),
+        lastUpdated: Date.now(),
+      } : null);
+    } catch (err: any) {
+      setError(err.message || '批量调整分组失败');
+      throw err;
     }
-
-    return { success: results.length, failed: errors.length };
   };
 
   const refreshSubscription = async (id: string) => {
@@ -351,6 +383,8 @@ export const useVaultApi = () => {
     addCredential,
     updateCredential,
     batchAddCredentials,
+    batchUpdateCredentialGroups,
+    batchUpdateSubscriptionGroups,
     deleteCredential,
     refreshSubscription,
     importVaultData,

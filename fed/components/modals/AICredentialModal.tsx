@@ -176,7 +176,7 @@ export const AICredentialModal: React.FC<AICredentialModalProps> = ({
         username: item.username || '',
         password: item.password || '',
         website: item.website || '',
-        category: item.category || '其他',
+        category: item.category || '默认',
         notes: item.notes || ''
       }));
 

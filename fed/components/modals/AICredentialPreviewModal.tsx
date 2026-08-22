@@ -1,20 +1,22 @@
 import React, { useState } from 'react';
 import { Credential } from '../../types';
-import { BrainIcon, GlobeIcon, TagIcon, KeyIcon } from '../Icons';
+import { BrainIcon, GlobeIcon, KeyIcon } from '../Icons';
 import { ModalOverlay } from './ModalOverlay';
+import { credentialDupKey, existingCredentialKeys } from '../../utils/groups';
 
 interface ParsedCredential extends Partial<Credential> {
   selected: boolean;
+  duplicate: boolean;
 }
 
 interface AICredentialPreviewModalProps {
   isOpen: boolean;
   onClose: () => void;
   credentials: Partial<Credential>[];
+  existingCredentials?: Credential[];
   onConfirm: (credentials: Partial<Credential>[]) => void;
 }
 
-// 分类颜色映射
 const categoryColors: Record<string, string> = {
   '社交': 'bg-pink-100 text-pink-700 border-pink-200',
   '购物': 'bg-orange-100 text-orange-700 border-orange-200',
@@ -26,31 +28,45 @@ const categoryColors: Record<string, string> = {
   '其他': 'bg-slate-100 text-slate-600 border-slate-200',
 };
 
+function toPreviewRows(credentials: Partial<Credential>[], existing: Credential[]): ParsedCredential[] {
+  const seen = existingCredentialKeys(existing);
+  return credentials.map(cred => {
+    const key = credentialDupKey(cred);
+    const duplicate = !!cred.label && seen.has(key);
+    if (cred.label && !duplicate) seen.add(key);
+    return { ...cred, selected: !duplicate, duplicate };
+  });
+}
+
 export const AICredentialPreviewModal: React.FC<AICredentialPreviewModalProps> = ({
   isOpen,
   onClose,
   credentials,
+  existingCredentials = [],
   onConfirm
 }) => {
   const [parsedData, setParsedData] = useState<ParsedCredential[]>(
-    credentials.map(c => ({ ...c, selected: true }))
+    toPreviewRows(credentials, existingCredentials)
   );
 
   React.useEffect(() => {
-    setParsedData(credentials.map(c => ({ ...c, selected: true })));
-  }, [credentials]);
+    setParsedData(toPreviewRows(credentials, existingCredentials));
+  }, [credentials, existingCredentials]);
 
   const handleToggleAll = (checked: boolean) => {
-    setParsedData(prev => prev.map(p => ({ ...p, selected: checked })));
+    setParsedData(prev => prev.map(p => p.duplicate ? p : { ...p, selected: checked }));
   };
 
   const handleToggleItem = (index: number) => {
-    setParsedData(prev => prev.map((p, i) => i === index ? { ...p, selected: !p.selected } : p));
+    setParsedData(prev => prev.map((p, i) => {
+      if (i !== index || p.duplicate) return p;
+      return { ...p, selected: !p.selected };
+    }));
   };
 
   const handleConfirm = () => {
-    const selected = parsedData.filter(p => p.selected);
-    const result: Partial<Credential>[] = selected.map(({ selected: _, ...rest }) => rest);
+    const selected = parsedData.filter(p => p.selected && !p.duplicate);
+    const result: Partial<Credential>[] = selected.map(({ selected: _s, duplicate: _d, ...rest }) => rest);
     onConfirm(result);
     onClose();
   };
@@ -59,7 +75,8 @@ export const AICredentialPreviewModal: React.FC<AICredentialPreviewModalProps> =
     return categoryColors[category || '其他'] || categoryColors['其他'];
   };
 
-  const selectedCount = parsedData.filter(p => p.selected).length;
+  const selectedCount = parsedData.filter(p => p.selected && !p.duplicate).length;
+  const duplicateCount = parsedData.filter(p => p.duplicate).length;
 
   if (!isOpen || credentials.length === 0) return null;
 
@@ -76,7 +93,8 @@ export const AICredentialPreviewModal: React.FC<AICredentialPreviewModalProps> =
                 AI 识别到 {credentials.length} 条凭据
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                已选择 {selectedCount} 条准备导入
+                将导入 {selectedCount} 条
+                {duplicateCount > 0 ? ` · 已存在跳过 ${duplicateCount} 条` : ''}
               </p>
             </div>
           </div>
@@ -88,11 +106,11 @@ export const AICredentialPreviewModal: React.FC<AICredentialPreviewModalProps> =
             <label className="flex items-center space-x-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={parsedData.every(p => p.selected)}
+                checked={parsedData.filter(p => !p.duplicate).every(p => p.selected) && selectedCount > 0}
                 onChange={(e) => handleToggleAll(e.target.checked)}
                 className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer"
               />
-              <span className="text-slate-600 text-sm">全选</span>
+              <span className="text-slate-600 text-sm">全选未重复项</span>
             </label>
           </div>
 
@@ -100,15 +118,20 @@ export const AICredentialPreviewModal: React.FC<AICredentialPreviewModalProps> =
             {parsedData.map((item, idx) => (
               <label
                 key={idx}
-                className={`flex items-start space-x-3 p-3 rounded-xl cursor-pointer transition-colors ${
-                  item.selected ? 'bg-blue-50 border border-blue-200' : 'bg-slate-50 border border-transparent hover:bg-slate-100'
+                className={`flex items-start space-x-3 p-3 rounded-xl transition-colors ${
+                  item.duplicate
+                    ? 'bg-amber-50 border border-amber-200 cursor-not-allowed opacity-80'
+                    : item.selected
+                      ? 'bg-blue-50 border border-blue-200 cursor-pointer'
+                      : 'bg-slate-50 border border-transparent hover:bg-slate-100 cursor-pointer'
                 }`}
               >
                 <input
                   type="checkbox"
-                  checked={item.selected}
+                  checked={item.duplicate ? false : item.selected}
+                  disabled={item.duplicate}
                   onChange={() => handleToggleItem(idx)}
-                  className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer mt-1"
+                  className="w-4 h-4 rounded border-slate-300 text-blue-600 cursor-pointer mt-1 disabled:cursor-not-allowed"
                 />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center space-x-2 mb-1">
@@ -116,6 +139,11 @@ export const AICredentialPreviewModal: React.FC<AICredentialPreviewModalProps> =
                     <span className="text-sm font-semibold text-slate-800 truncate">
                       {item.label || '未命名'}
                     </span>
+                    {item.duplicate && (
+                      <span className="text-[10px] px-1.5 py-0.5 rounded-md font-medium border bg-amber-100 text-amber-700 border-amber-200">
+                        已存在，将跳过
+                      </span>
+                    )}
                     {item.category && (
                       <span className={`text-[10px] px-1.5 py-0.5 rounded-md font-medium border ${getCategoryColor(item.category)}`}>
                         {item.category}
